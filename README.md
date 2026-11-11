@@ -1,4 +1,4 @@
-# TRACE: Dance Tracking with Learned Fall Recovery for the ROBOTIS K1 Humanoid
+# TRACE: Tracking and Recovery Adaptive Control with Experts for the ROBOTIS K1 Humanoid
 
 **English** | [한국어](README.ko.md)
 

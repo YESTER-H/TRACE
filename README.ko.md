@@ -12,6 +12,8 @@
   <img src="assets/teaser_run23.gif" width="720" alt="엎드린 자세, 누운 자세, 선 자세에서 시작한 K1 세 대가 모두 춤을 추는 장면">
 </p>
 
+<p align="center"><b><a href="https://yester-h.github.io/TRACE/">▶ 브라우저에서 직접 해보기</a></b>: 정책이 내 기기에서 실시간으로 돌아갑니다(MuJoCo WebAssembly + ONNX).</p>
+
 <p align="center"><i>정책 하나, 시작 상태 세 가지. 왼쪽은 엎드린 자세(Prone), 가운데는 누운 자세(Supine), 오른쪽은 선 자세에서 시작합니다.
 필요하면 스스로 일어난 뒤 모두 같은 춤을 이어 갑니다.</i></p>
 
@@ -45,6 +47,7 @@
 - **학습 정체 구간 없음.** Supine과 Prone 회복 성공률이 모두 약 4k iteration 안에 0.95에 도달합니다.
 - **강건한 시작.** 시작 frame과 reset 노이즈를 바꾼 회복 시작 192회가 모두 성공합니다.
 - **인터랙티브 전시 데모.** 관람객이 로봇을 밀거나 공을 던지면 로봇이 넘어졌다가 일어나 다시 춤을 춥니다.
+- **브라우저에서 실행.** [인터랙티브 웹 데모](https://yester-h.github.io/TRACE/)에서 같은 정책이 MuJoCo WebAssembly로 돌아갑니다. 로봇을 눕히면 스스로 일어나는 모습을 볼 수 있습니다. [`web/`](web) 참고.
 - **배포 시 방향 정렬.** 재학습 없이 push 회복을 15/44에서 45/45로 올립니다.
 
 ## 방법
@@ -228,6 +231,7 @@ TRACE/
 │       ├── reinforcement_learning/rsl_rl/   # evaluate_*, diagnose_*, smoke_*, 전시
 │       └── tools/motion/                    # trim_reference_motion.py, replay_npz_stepped.py
 ├── checkpoints/run23_gated_prone_trim/      # model_40600.pt + params/{agent,env}.yaml
+├── web/                            # 브라우저 데모 (mjswan): sim2sim 검증, ONNX export, Pages 빌드
 ├── assets/                         # README용 GIF와 그래프
 └── docs/experiments.md             # 전체 실험 이력 (23 run, 영문)
 ```

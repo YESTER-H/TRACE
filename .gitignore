@@ -5,3 +5,8 @@ outputs/
 imgui.ini
 .vscode/
 .idea/
+web/.venv/
+web/dist/
+web/pages_out/
+web/generated/
+web/MUJOCO_LOG.TXT

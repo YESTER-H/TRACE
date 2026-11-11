@@ -12,6 +12,8 @@
   <img src="assets/teaser_run23.gif" width="720" alt="Three K1 robots start lying face up, face down and standing; all end up dancing">
 </p>
 
+<p align="center"><b><a href="https://yester-h.github.io/TRACE/">▶ Try it in your browser</a></b>: the policy runs live on your device (MuJoCo WebAssembly + ONNX).</p>
+
 <p align="center"><i>One policy, three starts. Left: lying face down (Prone). Middle: lying face up (Supine). Right: standing.
 All three get up when needed and then follow the same dance.</i></p>
 
@@ -46,6 +48,7 @@ Training is done in Isaac Lab with the **Newton** physics backend.
 - **No plateau in training.** Supine and Prone recovery both reach 0.95 success by about 4k iterations.
 - **Robust starts.** 192 of 192 perturbed recovery starts succeed, at different frames and with reset noise.
 - **Interactive exhibition demo.** Visitors push the robot or throw balls at it. It falls, gets up and keeps dancing.
+- **Runs in the browser.** An [interactive web demo](https://yester-h.github.io/TRACE/) runs the same policy in MuJoCo WebAssembly. Knock the robot down and watch it get up. See [`web/`](web).
 - **Heading alignment at deployment.** No retraining is needed. It raises push recovery from 15/44 to 45/45.
 
 ## Method
@@ -229,6 +232,7 @@ TRACE/
 │       ├── reinforcement_learning/rsl_rl/   # evaluate_*, diagnose_*, smoke_*, exhibition
 │       └── tools/motion/                    # trim_reference_motion.py, replay_npz_stepped.py
 ├── checkpoints/run23_gated_prone_trim/      # model_40600.pt + params/{agent,env}.yaml
+├── web/                            # browser demo (mjswan): sim-to-sim check, ONNX export, Pages build
 ├── assets/                         # GIF and figures for this README
 └── docs/experiments.md             # the full run history (23 runs)
 ```

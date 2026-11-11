@@ -1,0 +1,227 @@
+diff --git a/scripts/reinforcement_learning/rsl_rl/play.py b/scripts/reinforcement_learning/rsl_rl/play.py
+index ea24b17..e382790 100644
+--- a/scripts/reinforcement_learning/rsl_rl/play.py
++++ b/scripts/reinforcement_learning/rsl_rl/play.py
+@@ -14,6 +14,7 @@ from isaaclab.app import AppLauncher
+ 
+ # local imports
+ import cli_args  # isort: skip
++from play_diagnostics import PlayDiagnostics
+ 
+ # add argparse arguments
+ parser = argparse.ArgumentParser(description="Train an RL agent with RSL-RL.")
+@@ -34,6 +35,9 @@ parser.add_argument(
+     help="Use the pre-trained checkpoint from Nucleus.",
+ )
+ parser.add_argument("--real-time", action="store_true", default=False, help="Run in real-time, if possible.")
++parser.add_argument("--skip-export", action="store_true", help="Skip JIT/ONNX export; use unchanged PyTorch inference.")
++parser.add_argument("--max-steps", type=int, default=0, help="Stop after this many control steps (0: unlimited).")
++parser.add_argument("--play-log-dir", type=str, default=None, help="Separate Play diagnostics directory (default: /tmp).")
+ parser.add_argument(
+     "--mouse_drag",
+     action="store_true",
+@@ -46,6 +50,8 @@ cli_args.add_rsl_rl_args(parser)
+ AppLauncher.add_app_launcher_args(parser)
+ # parse the arguments
+ args_cli, hydra_args = parser.parse_known_args()
++if args_cli.max_steps < 0:
++    parser.error("--max-steps must be non-negative")
+ cli_args.validate_task_exists(args_cli.task)
+ # Isaac Lab 3 defaults to headless when no visualizer is selected. Newton
+ # playback uses its native visualizer by default, while callers can still force
+@@ -68,6 +74,7 @@ sys.argv = [sys.argv[0]] + hydra_args
+ # Kit's USD modules, while SimulationCfg.physics still selects Newton dynamics.
+ app_launcher = AppLauncher(args_cli)
+ simulation_app = app_launcher.app
++play_diagnostics = PlayDiagnostics(simulation_app, args_cli.play_log_dir)
+ 
+ """Check for installed RSL-RL version."""
+ 
+@@ -242,10 +249,12 @@ def _run(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
+     log_dir = os.path.dirname(resume_path)
+ 
+     # set the log directory for the environment (works for all environment types)
+-    env_cfg.log_dir = log_dir
++    env_cfg.log_dir = play_diagnostics.directory
+ 
+     # create isaac environment
++    play_diagnostics.stage("environment_create_begin", task=args_cli.task, num_envs=env_cfg.scene.num_envs)
+     env = gym.make(args_cli.task, cfg=env_cfg, render_mode="rgb_array" if args_cli.video else None)
++    play_diagnostics.stage("environment_create_complete")
+ 
+     # convert to single-agent instance if required by the RL algorithm
+     if isinstance(env.unwrapped, DirectMARLEnv):
+@@ -277,18 +286,34 @@ def _run(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
+ 
+     print(f"[INFO]: Loading model checkpoint from: {resume_path}", flush=True)
+     # load previously trained model
++    play_diagnostics.stage("runner_create_begin", runner_class=agent_cfg.class_name)
+     if agent_cfg.class_name == "OnPolicyRunner":
+         runner = OnPolicyRunner(env, agent_cfg.to_dict(), log_dir=None, device=agent_cfg.device)
+     elif agent_cfg.class_name == "DistillationRunner":
+         runner = DistillationRunner(env, agent_cfg.to_dict(), log_dir=None, device=agent_cfg.device)
+     else:
+         raise ValueError(f"Unsupported runner class: {agent_cfg.class_name}")
++    play_diagnostics.stage("checkpoint_load_begin", checkpoint=resume_path)
+     _load_checkpoint(runner, resume_path)
++    play_diagnostics.stage("checkpoint_load_complete", checkpoint_iteration=runner.current_learning_iteration)
+ 
+     # obtain the trained policy for inference
+     policy = runner.get_inference_policy(device=env.unwrapped.device)
++    play_diagnostics.stage("pytorch_inference_ready")
+ 
+-    # export the trained policy to JIT and ONNX formats
++    # Export artifacts are optional: the rollout below already uses PyTorch.
++    if args_cli.skip_export:
++        play_diagnostics.stage("export_skipped")
++    else:
++        _export_policy(runner, agent_cfg, resume_path)
++
++    legacy_policy_nn = None
++    if version.parse(installed_version) < version.parse("4.0.0"):
++        legacy_policy_nn = runner.alg.policy if version.parse(installed_version) >= version.parse("2.3.0") else runner.alg.actor_critic
++    _play(env, policy, mouse_drag_viewer, newton_state, legacy_policy_nn)
++
++
++def _export_policy(runner, agent_cfg, resume_path):
+     export_model_dir = os.path.join(os.path.dirname(resume_path), "exported")
+ 
+     if (
+@@ -297,8 +322,12 @@ def _run(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
+         and hasattr(runner, "export_policy_to_onnx")
+     ):
+         # use the new export functions for rsl-rl >= 4.0.0
++        play_diagnostics.stage("jit_export_begin")
+         runner.export_policy_to_jit(path=export_model_dir, filename="policy.pt")
++        play_diagnostics.stage("jit_export_complete")
++        play_diagnostics.stage("onnx_export_begin")
+         runner.export_policy_to_onnx(path=export_model_dir, filename="policy.onnx")
++        play_diagnostics.stage("onnx_export_complete")
+     else:
+         # extract the neural network for rsl-rl < 4.0.0
+         if version.parse(installed_version) >= version.parse("2.3.0"):
+@@ -315,21 +344,33 @@ def _run(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
+             normalizer = None
+ 
+         # export to JIT and ONNX
++        play_diagnostics.stage("jit_export_begin")
+         export_policy_as_jit(policy_nn, normalizer=normalizer, path=export_model_dir, filename="policy.pt")
++        play_diagnostics.stage("jit_export_complete")
++        play_diagnostics.stage("onnx_export_begin")
+         export_policy_as_onnx(policy_nn, normalizer=normalizer, path=export_model_dir, filename="policy.onnx")
++        play_diagnostics.stage("onnx_export_complete")
+     _embed_onnx_external_data(os.path.join(export_model_dir, "policy.onnx"))
+     print(f"[INFO]: Exported policy to: {export_model_dir}", flush=True)
+ 
+     # The policy exporters omit the environment wrapper's action clipping.
+     clip_onnx_actions(os.path.join(export_model_dir, "policy.onnx"), agent_cfg.clip_actions)
++    play_diagnostics.stage("export_complete", export_directory=export_model_dir)
++
++
++def _play(env, policy, mouse_drag_viewer, newton_state, policy_nn):
+ 
+     dt = env.unwrapped.step_dt
+ 
+     # reset environment
+     obs = env.get_observations()
+     timestep = 0
++    play_diagnostics.stage("inference_loop_begin", max_steps=args_cli.max_steps)
+     # simulate environment
+-    while True:
++    while simulation_app.is_running():
++        # Newton has its own window; do not keep stepping after it is closed.
++        if any(not visualizer.is_running() for visualizer in env.unwrapped.sim.visualizers):
++            break
+         start_time = time.time()
+         # run everything in inference mode
+         with torch.inference_mode():
+@@ -344,8 +385,12 @@ def _run(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
+                 policy.reset(dones)
+             else:
+                 policy_nn.reset(dones)
++        timestep += 1
++        if timestep == 1:
++            play_diagnostics.stage("first_control_step_complete")
++        if args_cli.max_steps and timestep >= args_cli.max_steps:
++            break
+         if args_cli.video:
+-            timestep += 1
+             # Exit the play loop after recording one video
+             if timestep == args_cli.video_length:
+                 break
+@@ -355,6 +400,7 @@ def _run(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
+         if args_cli.real_time and sleep_time > 0:
+             time.sleep(sleep_time)
+ 
++    play_diagnostics.stage("inference_loop_complete", control_steps=timestep)
+     # close the simulator
+     env.close()
+ 
+@@ -362,12 +408,8 @@ def _run(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
+ @hydra_task_config(args_cli.task, args_cli.agent)
+ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agent_cfg: RslRlBaseRunnerCfg):
+     """Play using the physics backend selected by the task config."""
+-    _run(env_cfg, agent_cfg)
++    play_diagnostics.invoke(_run, env_cfg, agent_cfg)
+ 
+ 
+ if __name__ == "__main__":
+-    # run the main function
+-    try:
+-        main()
+-    finally:
+-        simulation_app.close()
++    play_diagnostics.run(main)
+diff --git a/scripts/reinforcement_learning/rsl_rl/train.py b/scripts/reinforcement_learning/rsl_rl/train.py
+index 0b5d381..c045850 100644
+--- a/scripts/reinforcement_learning/rsl_rl/train.py
++++ b/scripts/reinforcement_learning/rsl_rl/train.py
+@@ -14,6 +14,7 @@ from isaaclab.app import AppLauncher
+ 
+ # local imports
+ import cli_args  # isort: skip
++from training_diagnostics import TrainingDiagnostics
+ 
+ # add argparse arguments
+ parser = argparse.ArgumentParser(description="Train an RL agent with RSL-RL.")
+@@ -52,6 +53,8 @@ sys.argv = [sys.argv[0]] + hydra_args
+ # Kit's USD modules, while SimulationCfg.physics still selects Newton dynamics.
+ app_launcher = AppLauncher(args_cli)
+ simulation_app = app_launcher.app
++# Install before post-launch imports, including native handlers and uncaught import errors.
++training_diagnostics = TrainingDiagnostics(simulation_app)
+ 
+ """Check for minimum supported RSL-RL version."""
+ 
+@@ -170,6 +173,7 @@ def _run(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
+     if agent_cfg.run_name:
+         log_dir += f"_{agent_cfg.run_name}"
+     log_dir = os.path.join(log_root_path, log_dir)
++    training_diagnostics.set_log_dir(log_dir)
+ 
+     # set the IO descriptors export flag if requested
+     if isinstance(env_cfg, ManagerBasedRLEnvCfg):
+@@ -232,7 +236,13 @@ def _run(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
+     export_sim2real_cfg(env.unwrapped, log_dir)
+ 
+     # run training
++    training_diagnostics.bind_runner(
++        runner, agent_cfg.max_iterations, task=args_cli.task,
++        num_envs=env.num_envs, seed=agent_cfg.seed, resume=agent_cfg.resume,
++        num_steps_per_env=agent_cfg.num_steps_per_env, device=agent_cfg.device,
++    )
+     runner.learn(num_learning_iterations=agent_cfg.max_iterations, init_at_random_ep_len=True)
++    training_diagnostics.verify_completion()
+ 
+     print(f"Training time: {round(time.time() - start_time, 2)} seconds")
+ 
+@@ -247,8 +257,4 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
+ 
+ 
+ if __name__ == "__main__":
+-    # run the main function
+-    try:
+-        main()
+-    finally:
+-        simulation_app.close()
++    training_diagnostics.run(main)

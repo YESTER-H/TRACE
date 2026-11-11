@@ -1,0 +1,183 @@
+{
+  "body_names": [
+    "pelvis",
+    "left_hip_pitch_link",
+    "right_hip_pitch_link",
+    "torso_link",
+    "left_hip_roll_link",
+    "right_hip_roll_link",
+    "head_link",
+    "left_shoulder_pitch_link",
+    "right_shoulder_pitch_link",
+    "left_hip_yaw_link",
+    "right_hip_yaw_link",
+    "left_shoulder_roll_link",
+    "right_shoulder_roll_link",
+    "left_knee_link",
+    "right_knee_link",
+    "left_shoulder_yaw_link",
+    "right_shoulder_yaw_link",
+    "left_ankle_pitch_link",
+    "right_ankle_pitch_link",
+    "left_elbow_link",
+    "right_elbow_link",
+    "left_ankle_roll_link",
+    "right_ankle_roll_link",
+    "left_wrist_roll_rubber_hand",
+    "right_wrist_roll_rubber_hand"
+  ],
+  "joint_names": [
+    "left_hip_pitch_joint",
+    "right_hip_pitch_joint",
+    "waist_yaw_joint",
+    "left_hip_roll_joint",
+    "right_hip_roll_joint",
+    "left_shoulder_pitch_joint",
+    "right_shoulder_pitch_joint",
+    "left_hip_yaw_joint",
+    "right_hip_yaw_joint",
+    "left_shoulder_roll_joint",
+    "right_shoulder_roll_joint",
+    "left_knee_joint",
+    "right_knee_joint",
+    "left_shoulder_yaw_joint",
+    "right_shoulder_yaw_joint",
+    "left_ankle_pitch_joint",
+    "right_ankle_pitch_joint",
+    "left_elbow_joint",
+    "right_elbow_joint",
+    "left_ankle_roll_joint",
+    "right_ankle_roll_joint",
+    "left_wrist_roll_joint",
+    "right_wrist_roll_joint"
+  ],
+  "source_quat_order": "wxyz",
+  "reference_urdf_sha256": "d7f441ecf5c1b215a7333dc910a6c387df2828900d72f30e2696108dd6e7ada4",
+  "source_com_by_name": {
+    "head_link": [
+      0.0069530038,
+      0.0000032428498,
+      0.10655321
+    ],
+    "pelvis": [
+      -0.0029264891,
+      0.0000011277553,
+      -0.050315356
+    ],
+    "left_hip_pitch_link": [
+      -0.0011416704,
+      0.079484326,
+      -0.025798051
+    ],
+    "left_hip_roll_link": [
+      0.014517229,
+      -0.0000029598811,
+      -0.079082226
+    ],
+    "left_hip_yaw_link": [
+      -0.0019817717,
+      -0.0049363388,
+      -0.18114179
+    ],
+    "left_knee_link": [
+      -0.00038702942,
+      0.0031481092,
+      -0.1238798
+    ],
+    "left_ankle_pitch_link": [
+      0.0050324732,
+      -0.00003766079,
+      0.0024023195
+    ],
+    "left_ankle_roll_link": [
+      0.034604148,
+      0.000004987565,
+      -0.040951117
+    ],
+    "right_hip_pitch_link": [
+      -0.0011413508,
+      -0.079488637,
+      -0.02579253
+    ],
+    "right_hip_roll_link": [
+      0.014517229,
+      -0.0000029598811,
+      -0.079082226
+    ],
+    "right_hip_yaw_link": [
+      -0.001979799,
+      0.0049371561,
+      -0.18114301
+    ],
+    "right_knee_link": [
+      -0.00038702942,
+      -0.0031481092,
+      -0.1238798
+    ],
+    "right_ankle_pitch_link": [
+      0.0050324732,
+      -0.00003766079,
+      0.0024023195
+    ],
+    "right_ankle_roll_link": [
+      0.034604148,
+      0.000004987565,
+      -0.040951117
+    ],
+    "torso_link": [
+      -0.01396563,
+      0.00060138172,
+      0.21107379
+    ],
+    "left_shoulder_pitch_link": [
+      -0.0028605363,
+      0.0735648,
+      4.0289074e-7
+    ],
+    "left_shoulder_roll_link": [
+      -0.00085988698,
+      -0.0000014013302,
+      -0.062668097
+    ],
+    "left_shoulder_yaw_link": [
+      0.012409652,
+      -0.0040159578,
+      -0.10372122
+    ],
+    "left_elbow_link": [
+      0.065520399,
+      0.0041218434,
+      0.0000034902337
+    ],
+    "left_wrist_roll_rubber_hand": [
+      0.14076542,
+      0.00052486316,
+      0.00040393373
+    ],
+    "right_shoulder_pitch_link": [
+      -0.0028605363,
+      -0.073563073,
+      0.0000074920724
+    ],
+    "right_shoulder_roll_link": [
+      -0.00085988701,
+      -0.0000014013302,
+      -0.062668097
+    ],
+    "right_shoulder_yaw_link": [
+      0.012409652,
+      0.0040159578,
+      -0.10372122
+    ],
+    "right_elbow_link": [
+      0.065520399,
+      -0.0041218439,
+      -0.0000034902337
+    ],
+    "right_wrist_roll_rubber_hand": [
+      0.14076543,
+      -0.00052485808,
+      0.000403934
+    ]
+  }
+}

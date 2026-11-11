@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+logs/
+outputs/
+imgui.ini
+.vscode/
+.idea/

@@ -37,9 +37,9 @@ zipfile.ZipFile(scene_dir / "scene.mjz").extractall(tmp)
 model = mujoco.MjModel.from_xml_path(os.path.join(tmp, next(f for f in os.listdir(tmp) if f.endswith(".xml"))))
 print("solver iterations", model.opt.iterations, model.opt.ls_iterations, "dt", model.opt.timestep)
 session = ort.InferenceSession(str(scene_dir / policy_cfg["onnx"]))
-joints = policy_cfg["policy_joint_names"]
+joints = [j.split("/", 1)[-1] for j in policy_cfg["policy_joint_names"]]  # names in the scene carry "robot/"
 default = np.array(policy_cfg["default_joint_pos"], np.float32)
-scale = np.array([mdp["actions"]["joint_pos"]["scale"][j] for j in joints], np.float32)
+scale = np.array([mdp["actions"]["joint_pos"]["scale"]["robot/" + j] for j in joints], np.float32)
 qadr = np.array([model.jnt_qposadr[model.joint("robot/" + j).id] for j in joints])
 vadr = np.array([model.jnt_dofadr[model.joint("robot/" + j).id] for j in joints])
 act = np.array([model.actuator("robot/" + j).id for j in joints])

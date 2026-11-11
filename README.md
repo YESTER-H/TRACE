@@ -48,7 +48,7 @@ Training is done in Isaac Lab with the **Newton** physics backend.
 - **No plateau in training.** Supine and Prone recovery both reach 0.95 success by about 4k iterations.
 - **Robust starts.** 192 of 192 perturbed recovery starts succeed, at different frames and with reset noise.
 - **Interactive exhibition demo.** Visitors push the robot or throw balls at it. It falls, gets up and keeps dancing.
-- **Runs in the browser.** An [interactive web demo](https://yester-h.github.io/TRACE/) runs the same policy in MuJoCo WebAssembly. Knock the robot down and watch it get up. See [`web/`](web).
+- **Runs in the browser.** An [interactive web demo](https://yester-h.github.io/TRACE/) runs the same policy in MuJoCo WebAssembly. Knock it down or shove it from any direction, and it gets up and dances on. See [`web/`](web).
 - **Heading alignment at deployment.** No retraining is needed. It raises push recovery from 15/44 to 45/45.
 
 ## Method

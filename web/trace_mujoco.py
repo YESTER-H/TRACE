@@ -251,11 +251,14 @@ HISTORY = 4
 class Observer:
     """Term-wise H4 history (oldest first), reset by repeating the first sample, as Isaac Lab does."""
 
-    def __init__(self):
+    def __init__(self, aligner: "HeadingAligner | None" = None):
         self.buffers = None
+        self.aligner = aligner
 
     def terms(self, robot: K1, dance: Motion, phase: int, last_action):
         ref_anchor = dance.body_quat[phase, ANCHOR_ID]
+        if self.aligner is not None:
+            ref_anchor = self.aligner.rotate(ref_anchor)
         relative = quat_mul(quat_conj(robot.anchor_quat()), ref_anchor)
         return {
             "command": np.concatenate([dance.joint_pos[phase], dance.joint_vel[phase]]),
@@ -279,6 +282,59 @@ class Observer:
         return policy.astype(np.float32), gate.astype(np.float32)
 
 
+# ----------------------------------------------------------------------------------------------- heading alignment
+SETTLE_STEPS = 15          # lying still this long (0.3 s at 50 Hz) before the heading is read
+RELOCK_STEPS = 150         # still lying this long after a lock (3 s): read it again
+LYING_PELVIS = .3
+STILL_LINEAR, STILL_ANGULAR = .5, 1.5
+
+
+def head_angle(q):
+    """Yaw of the body's z axis (head direction) on the floor plane."""
+    m = np.zeros(9); mujoco.mju_quat2Mat(m, q); m = m.reshape(3, 3)
+    return float(np.arctan2(m[1, 2], m[0, 2]))
+
+
+def chest_up(q):
+    m = np.zeros(9); mujoco.mju_quat2Mat(m, q)
+    return m.reshape(3, 3)[2, 0] > 0
+
+
+class HeadingAligner:
+    """Deployment-only heading alignment (port of trace_heading_alignment.py, exhibition script).
+
+    Recovery was trained lying in one heading relative to the dance. Once the robot lies still, the dance
+    reference is turned about world z so that the robot-to-reference relation equals the trained one.
+    """
+
+    def __init__(self, motions, dt=CONTROL_DT):
+        self.dt = dt
+        self.reference_head = {k: head_angle(motions[k].body_quat[0, ANCHOR_ID]) for k in ("supine", "prone")}
+        self.reset()
+
+    def reset(self):
+        self.offset, self.still, self.since_lock, self.locks = 0.0, 0, 10**9, 0
+
+    def update(self, robot: K1):
+        """Call once per control step, after physics. Returns True when it locked a new heading."""
+        lin = np.linalg.norm(robot.data.qvel[:3]); ang = np.linalg.norm(robot.data.qvel[3:6])
+        lying_still = robot.pelvis_height() < LYING_PELVIS and lin < STILL_LINEAR and ang < STILL_ANGULAR
+        self.still = self.still + 1 if lying_still else 0
+        self.since_lock += 1
+        if self.still >= SETTLE_STEPS and self.since_lock >= RELOCK_STEPS:
+            q = robot.anchor_quat()
+            ref = self.reference_head["supine" if chest_up(q) else "prone"]
+            d = head_angle(q) - ref
+            self.offset = float(np.arctan2(np.sin(d), np.cos(d)))
+            self.since_lock, self.locks = 0, self.locks + 1
+            return True
+        return False
+
+    def rotate(self, q_ref):
+        half = self.offset / 2
+        return quat_mul(np.array([np.cos(half), 0, 0, np.sin(half)]), q_ref)
+
+
 # ----------------------------------------------------------------------------------------------- rollout
 def start_state(motions, start):
     """Robot pose at frame 0 of the dance ("stand") or of a get-up reference ("supine" / "prone")."""
@@ -287,13 +343,16 @@ def start_state(motions, start):
 
 
 class Controller:
-    def __init__(self, robot: K1, policy: TracePolicy, motions):
+    def __init__(self, robot: K1, policy: TracePolicy, motions, align_heading=False):
         self.robot, self.policy, self.motions = robot, policy, motions
         self.dance = motions["tracking"]
+        self.aligner = HeadingAligner(motions) if align_heading else None
 
     def reset(self, start="stand"):
         self.robot.set_state(*start_state(self.motions, start))
-        self.observer = Observer()
+        if self.aligner is not None:
+            self.aligner.reset()
+        self.observer = Observer(self.aligner)
         self.phase = 0
         self.last_action = np.zeros(23, np.float32)
 
@@ -305,4 +364,6 @@ class Controller:
         self.robot.step(DEFAULT_JOINT_POS + ACTION_SCALE * action)
         self.last_action = action
         self.phase = (self.phase + 1) % self.dance.num_frames
+        if self.aligner is not None:
+            self.aligner.update(self.robot)
         return float(w_t[0, 0])

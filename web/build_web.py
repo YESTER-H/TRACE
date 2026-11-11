@@ -23,6 +23,7 @@ import mjswan
 from mjlab.actuator import BuiltinPositionActuatorCfg
 from mjlab.entity import EntityArticulationInfoCfg, EntityCfg
 from mjlab.envs.mdp import observations as obs_fns
+from mjlab.envs.mdp import events as mjlab_events
 from mjlab.envs.mdp.actions import JointPositionActionCfg
 from mjswan.managers.event_manager import EventTermCfg  # mjswan's: adds `label` for manual buttons
 from mjlab.managers.observation_manager import ObservationGroupCfg, ObservationTermCfg
@@ -134,6 +135,27 @@ def lie_event(kind: str, label: str) -> EventTermCfg:
     )
 
 
+# ----------------------------------------------------------------------------------------------- heading alignment
+ALIGN_HEADING = os.environ.get("TRACE_ALIGN_HEADING", "1") != "0"
+_HEADS = {k: tm.head_angle(tm.Motion(tm.MOTION_FILES[k]).body_quat[0, tm.ANCHOR_ID]) for k in ("supine", "prone")}
+ALIGNED_ANCHOR_ORI = mjswan.ObservationBinding(
+    ts_name="TraceAlignedAnchorOri",
+    ts_src=str(HERE / "ts" / "TraceAlignedAnchorOri.ts"),
+    defaults={"supine_head": _HEADS["supine"], "prone_head": _HEADS["prone"], "settle_steps": tm.SETTLE_STEPS,
+              "relock_steps": tm.RELOCK_STEPS, "lying_pelvis": tm.LYING_PELVIS, "still_linear": tm.STILL_LINEAR,
+              "still_angular": tm.STILL_ANGULAR, "history": 4, "command_name": "motion"},
+)
+# The frontend bundles the TS source of every registered binding.
+mjswan.register_observation("trace_aligned_anchor_ori", ALIGNED_ANCHOR_ORI)
+
+
+def trace_aligned_anchor_ori(env, command_name: str = "motion"):
+    """Python stand-in with the TS term's shape ([N, 4 x 6]), used by mjlab's tracing env only.
+
+    mjswan replaces it by name with ALIGNED_ANCHOR_ORI (the TS class) in the browser bundle."""
+    return tracking_obs.motion_anchor_ori_b(env, command_name).repeat(1, 4)
+
+
 # ----------------------------------------------------------------------------------------------- env cfg
 def env_cfg():
     cfg = make_tracking_env_cfg()
@@ -150,8 +172,10 @@ def env_cfg():
     hist = dict(history_length=4)
     cfg.observations = {"actor": ObservationGroupCfg(terms={
         "command": ObservationTermCfg(func=obs_fns.generated_commands, params={"command_name": "motion"}, **hist),
-        "motion_anchor_ori_b": ObservationTermCfg(func=tracking_obs.motion_anchor_ori_b,
-                                                  params={"command_name": "motion"}, **hist),
+        # Hand-written TS term: mjlab's motion_anchor_ori_b + heading alignment, own 4-frame history.
+        "motion_anchor_ori_b": ObservationTermCfg(func=trace_aligned_anchor_ori, params={"command_name": "motion"}, history_length=0)
+        if ALIGN_HEADING else
+        ObservationTermCfg(func=tracking_obs.motion_anchor_ori_b, params={"command_name": "motion"}, **hist),
         "base_ang_vel": ObservationTermCfg(func=obs_fns.base_ang_vel, **hist),
         "joint_pos": ObservationTermCfg(func=obs_fns.joint_pos_rel, **hist),
         "joint_vel": ObservationTermCfg(func=obs_fns.joint_vel_rel, **hist),
@@ -173,7 +197,14 @@ def env_cfg():
     cfg.events = {
         "lie_face_up": lie_event("supine", "Lie down face up (Supine)"),
         "lie_face_down": lie_event("prone", "Lie down face down (Prone)"),
+        # A random horizontal shove on the pelvis (up to 3 m/s per axis), often enough to knock it over.
+        "shove": EventTermCfg(func=mjlab_events.push_by_setting_velocity, mode="manual", label="Shove (random push)",
+                              params={"velocity_range": {"x": (-3.0, 3.0), "y": (-3.0, 3.0)}}),
     }
+    # Follow the robot's pelvis (a shove can carry it meters away from the reference ghost).
+    cfg.viewer.body_name = "pelvis"
+    cfg.viewer.distance = 3.2
+    cfg.viewer.elevation = -10.0
     cfg.rewards = {}
     cfg.terminations = {}
     cfg.curriculum = {}

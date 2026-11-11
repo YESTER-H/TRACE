@@ -1,0 +1,622 @@
+{
+  "format": 8,
+  "version": "0.12.12",
+  "uses_custom_js": false,
+  "viewer_gui": [
+    {
+      "type": "folder",
+      "label": "Scene",
+      "children": [
+        {
+          "type": "folder",
+          "label": "Camera",
+          "children": [
+            {
+              "type": "checkbox",
+              "label": "Track camera",
+              "default": true,
+              "hint": "Keep tracked body centered."
+            },
+            {
+              "type": "slider",
+              "label": "FOV (\u00b0)",
+              "default": 60,
+              "min": 20,
+              "max": 150,
+              "step": 1,
+              "hint": "Vertical FOV in degrees."
+            }
+          ]
+        },
+        {
+          "type": "folder",
+          "label": "Debug Viz",
+          "children": [
+            {
+              "type": "checkbox",
+              "label": "Enabled",
+              "default": true,
+              "hint": "Show debug arrows and ghost meshes."
+            },
+            {
+              "type": "checkbox",
+              "label": "All envs",
+              "default": false,
+              "hint": "Show debug visualization for all environments."
+            },
+            {
+              "type": "slot",
+              "name": "debug_vis"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "id": "trace",
+      "name": "TRACE",
+      "scenes": [
+        {
+          "id": "k1_trace",
+          "name": "K1 TRACE",
+          "scene": "scene.mjz",
+          "control_dt": 0.02,
+          "camera": {
+            "lookat": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "distance": 2.8,
+            "elevation": -5.0,
+            "azimuth": 120.0,
+            "origin_type": "ASSET_BODY",
+            "enable_reflections": true,
+            "enable_shadows": true,
+            "height": 240,
+            "width": 320,
+            "fovy": 55.0,
+            "entity_name": "robot",
+            "body_name": ""
+          },
+          "mdps": [
+            {
+              "id": "trace_run_23",
+              "commands": {
+                "motion": {
+                  "name": "TrackingCommand",
+                  "anchor_body_name": "torso_link",
+                  "body_names": [
+                    "pelvis",
+                    "left_hip_pitch_link",
+                    "left_hip_roll_link",
+                    "left_hip_yaw_link",
+                    "left_knee_link",
+                    "left_ankle_pitch_link",
+                    "left_ankle_roll_link",
+                    "right_hip_pitch_link",
+                    "right_hip_roll_link",
+                    "right_hip_yaw_link",
+                    "right_knee_link",
+                    "right_ankle_pitch_link",
+                    "right_ankle_roll_link",
+                    "torso_link",
+                    "head_link",
+                    "left_shoulder_pitch_link",
+                    "left_shoulder_roll_link",
+                    "left_shoulder_yaw_link",
+                    "left_elbow_link",
+                    "left_wrist_roll_rubber_hand",
+                    "right_shoulder_pitch_link",
+                    "right_shoulder_roll_link",
+                    "right_shoulder_yaw_link",
+                    "right_elbow_link",
+                    "right_wrist_roll_rubber_hand"
+                  ],
+                  "sampling_mode": "start",
+                  "pose_range": {},
+                  "velocity_range": {},
+                  "joint_position_range": [
+                    0.0,
+                    0.0
+                  ],
+                  "debug_vis": true,
+                  "viz_mode": "ghost",
+                  "ghost_color": [
+                    0.5,
+                    0.7,
+                    0.5,
+                    0.5
+                  ],
+                  "entity_name": "robot"
+                }
+              },
+              "actions": {
+                "joint_pos": {
+                  "type": "joint_position",
+                  "scale": {
+                    "robot/left_hip_pitch_joint": 0.31674936413764954,
+                    "robot/left_hip_roll_joint": 0.31674936413764954,
+                    "robot/left_hip_yaw_joint": 0.31674936413764954,
+                    "robot/left_knee_joint": 0.31674936413764954,
+                    "robot/left_ankle_pitch_joint": 0.31674936413764954,
+                    "robot/left_ankle_roll_joint": 0.5299864411354065,
+                    "robot/right_hip_pitch_joint": 0.31674936413764954,
+                    "robot/right_hip_roll_joint": 0.31674936413764954,
+                    "robot/right_hip_yaw_joint": 0.31674936413764954,
+                    "robot/right_knee_joint": 0.31674936413764954,
+                    "robot/right_ankle_pitch_joint": 0.31674936413764954,
+                    "robot/right_ankle_roll_joint": 0.5299864411354065,
+                    "robot/waist_yaw_joint": 0.31674936413764954,
+                    "robot/left_shoulder_pitch_joint": 0.5299864411354065,
+                    "robot/left_shoulder_roll_joint": 0.5299864411354065,
+                    "robot/left_shoulder_yaw_joint": 0.5299864411354065,
+                    "robot/left_elbow_joint": 0.5299864411354065,
+                    "robot/left_wrist_roll_joint": 0.5299864411354065,
+                    "robot/right_shoulder_pitch_joint": 0.5299864411354065,
+                    "robot/right_shoulder_roll_joint": 0.5299864411354065,
+                    "robot/right_shoulder_yaw_joint": 0.5299864411354065,
+                    "robot/right_elbow_joint": 0.5299864411354065,
+                    "robot/right_wrist_roll_joint": 0.5299864411354065
+                  },
+                  "actuator_names": [
+                    "robot/.*"
+                  ],
+                  "use_default_offset": true
+                }
+              },
+              "observations": {
+                "actor": [
+                  {
+                    "name": "command",
+                    "onnx": "mdp/trace_run_23/obs/command.onnx",
+                    "size": 46,
+                    "input_slots": [
+                      {
+                        "command": "motion",
+                        "field": "command",
+                        "input": "command__motion_command",
+                        "shape": [
+                          1,
+                          46
+                        ]
+                      }
+                    ],
+                    "func": "mjlab.envs.mdp.observations:generated_commands",
+                    "params": {
+                      "command_name": "motion"
+                    },
+                    "history_length": 4
+                  },
+                  {
+                    "name": "motion_anchor_ori_b",
+                    "onnx": "mdp/trace_run_23/obs/motion_anchor_ori_b.onnx",
+                    "size": 6,
+                    "input_slots": [
+                      {
+                        "command": "motion",
+                        "field": "anchor_quat_w",
+                        "input": "command__motion_anchor_quat_w",
+                        "shape": [
+                          1,
+                          4
+                        ]
+                      },
+                      {
+                        "command": "motion",
+                        "field": "robot_anchor_quat_w",
+                        "input": "command__motion_robot_anchor_quat_w",
+                        "shape": [
+                          1,
+                          4
+                        ]
+                      }
+                    ],
+                    "func": "mjlab.tasks.tracking.mdp.observations:motion_anchor_ori_b",
+                    "params": {
+                      "command_name": "motion"
+                    },
+                    "history_length": 4
+                  },
+                  {
+                    "name": "base_ang_vel",
+                    "onnx": "mdp/trace_run_23/obs/base_ang_vel.onnx",
+                    "size": 3,
+                    "input_slots": [
+                      {
+                        "entity": "robot",
+                        "field": "root_link_ang_vel_b",
+                        "input": "robot__root_link_ang_vel_b",
+                        "shape": [
+                          1,
+                          3
+                        ]
+                      }
+                    ],
+                    "func": "mjlab.envs.mdp.observations:base_ang_vel",
+                    "history_length": 4
+                  },
+                  {
+                    "name": "joint_pos",
+                    "onnx": "mdp/trace_run_23/obs/joint_pos.onnx",
+                    "size": 23,
+                    "input_slots": [
+                      {
+                        "entity": "robot",
+                        "field": "joint_pos",
+                        "input": "robot__joint_pos",
+                        "shape": [
+                          1,
+                          23
+                        ]
+                      }
+                    ],
+                    "func": "mjlab.envs.mdp.observations:joint_pos_rel",
+                    "history_length": 4
+                  },
+                  {
+                    "name": "joint_vel",
+                    "onnx": "mdp/trace_run_23/obs/joint_vel.onnx",
+                    "size": 23,
+                    "input_slots": [
+                      {
+                        "entity": "robot",
+                        "field": "joint_vel",
+                        "input": "robot__joint_vel",
+                        "shape": [
+                          1,
+                          23
+                        ]
+                      }
+                    ],
+                    "func": "mjlab.envs.mdp.observations:joint_vel_rel",
+                    "history_length": 4
+                  },
+                  {
+                    "name": "actions",
+                    "onnx": "mdp/trace_run_23/obs/actions.onnx",
+                    "size": 23,
+                    "input_slots": [
+                      {
+                        "action": "action",
+                        "input": "action__action",
+                        "shape": [
+                          1,
+                          23
+                        ]
+                      }
+                    ],
+                    "func": "mjlab.envs.mdp.observations:last_action",
+                    "history_length": 4
+                  },
+                  {
+                    "name": "projected_gravity",
+                    "onnx": "mdp/trace_run_23/obs/projected_gravity.onnx",
+                    "size": 3,
+                    "input_slots": [
+                      {
+                        "entity": "robot",
+                        "field": "projected_gravity_b",
+                        "input": "robot__projected_gravity_b",
+                        "shape": [
+                          1,
+                          3
+                        ]
+                      }
+                    ],
+                    "func": "mjlab.envs.mdp.observations:projected_gravity",
+                    "history_length": 4
+                  }
+                ]
+              },
+              "events": [
+                {
+                  "name": "lie_face_up",
+                  "mode": "manual",
+                  "onnx": "mdp/trace_run_23/event/lie_face_up.onnx",
+                  "rand_dim": 0,
+                  "rand_ranges": [],
+                  "input_slots": [
+                    {
+                      "entity": "robot",
+                      "field": "root_link_pos_w",
+                      "input": "robot__root_link_pos_w",
+                      "shape": [
+                        1,
+                        3
+                      ]
+                    }
+                  ],
+                  "write_targets": [
+                    {
+                      "kind": "root_pose",
+                      "entity": "robot",
+                      "fields": [
+                        "pose"
+                      ],
+                      "outputs": [
+                        "robot__root_pose__pose"
+                      ]
+                    },
+                    {
+                      "kind": "root_velocity",
+                      "entity": "robot",
+                      "fields": [
+                        "velocity"
+                      ],
+                      "outputs": [
+                        "robot__root_velocity__velocity"
+                      ]
+                    },
+                    {
+                      "kind": "joint_state",
+                      "entity": "robot",
+                      "fields": [
+                        "position",
+                        "velocity"
+                      ],
+                      "outputs": [
+                        "robot__joint_state__position",
+                        "robot__joint_state__velocity"
+                      ]
+                    }
+                  ],
+                  "func": "__main__:lie_down",
+                  "doc": "Put the robot on the floor in the first pose of a get-up reference, where it stands now.",
+                  "params": {
+                    "root_pos_z": 0.027443217113614082,
+                    "root_quat": [
+                      0.5248633027076721,
+                      -0.49288466572761536,
+                      -0.4558277726173401,
+                      -0.523263156414032
+                    ],
+                    "joint_pos": [
+                      -0.10047630220651627,
+                      0.1778034120798111,
+                      0.39535069465637207,
+                      0.020997267216444016,
+                      0.5881586074829102,
+                      -0.2974222004413605,
+                      -0.07702390104532242,
+                      -0.08343048393726349,
+                      -0.4817742705345154,
+                      0.011842052452266216,
+                      0.5278554558753967,
+                      0.10131138563156128,
+                      -0.022338518872857094,
+                      0.04754232242703438,
+                      0.3554956912994385,
+                      -0.4244205355644226,
+                      1.3833374977111816,
+                      0.3682399392127991,
+                      0.07587342709302902,
+                      -0.26922857761383057,
+                      0.10556543618440628,
+                      1.4134256839752197,
+                      -0.8790449500083923
+                    ]
+                  },
+                  "label": "Lie down face up (Supine)"
+                },
+                {
+                  "name": "lie_face_down",
+                  "mode": "manual",
+                  "onnx": "mdp/trace_run_23/event/lie_face_down.onnx",
+                  "rand_dim": 0,
+                  "rand_ranges": [],
+                  "input_slots": [
+                    {
+                      "entity": "robot",
+                      "field": "root_link_pos_w",
+                      "input": "robot__root_link_pos_w",
+                      "shape": [
+                        1,
+                        3
+                      ]
+                    }
+                  ],
+                  "write_targets": [
+                    {
+                      "kind": "root_pose",
+                      "entity": "robot",
+                      "fields": [
+                        "pose"
+                      ],
+                      "outputs": [
+                        "robot__root_pose__pose"
+                      ]
+                    },
+                    {
+                      "kind": "root_velocity",
+                      "entity": "robot",
+                      "fields": [
+                        "velocity"
+                      ],
+                      "outputs": [
+                        "robot__root_velocity__velocity"
+                      ]
+                    },
+                    {
+                      "kind": "joint_state",
+                      "entity": "robot",
+                      "fields": [
+                        "position",
+                        "velocity"
+                      ],
+                      "outputs": [
+                        "robot__joint_state__position",
+                        "robot__joint_state__velocity"
+                      ]
+                    }
+                  ],
+                  "func": "__main__:lie_down",
+                  "doc": "Put the robot on the floor in the first pose of a get-up reference, where it stands now.",
+                  "params": {
+                    "root_pos_z": 0.09457646310329437,
+                    "root_quat": [
+                      -0.4805276393890381,
+                      -0.5045976638793945,
+                      -0.5225787162780762,
+                      0.4913104474544525
+                    ],
+                    "joint_pos": [
+                      -0.2616838812828064,
+                      0.07896525412797928,
+                      -0.41841280460357666,
+                      0.30342957377433777,
+                      0.7853999733924866,
+                      -0.08902721852064133,
+                      -0.22196920216083527,
+                      0.013409829698503017,
+                      0.7859434485435486,
+                      0.188820943236351,
+                      0.7853999733924866,
+                      0.34240543842315674,
+                      -0.01200924627482891,
+                      -0.2649037539958954,
+                      0.22791285812854767,
+                      -1.088645100593567,
+                      1.5919348001480103,
+                      0.1549721360206604,
+                      -0.26106807589530945,
+                      -0.28671714663505554,
+                      1.339766025543213,
+                      1.4269778728485107,
+                      -0.2883237898349762
+                    ]
+                  },
+                  "label": "Lie down face down (Prone)"
+                }
+              ]
+            }
+          ],
+          "policies": [
+            {
+              "id": "trace_run_23",
+              "name": "TRACE run 23",
+              "default": true,
+              "mdp": "trace_run_23",
+              "onnx": "policy/trace_run_23.onnx",
+              "policy_joint_names": [
+                "robot/left_hip_pitch_joint",
+                "robot/left_hip_roll_joint",
+                "robot/left_hip_yaw_joint",
+                "robot/left_knee_joint",
+                "robot/left_ankle_pitch_joint",
+                "robot/left_ankle_roll_joint",
+                "robot/right_hip_pitch_joint",
+                "robot/right_hip_roll_joint",
+                "robot/right_hip_yaw_joint",
+                "robot/right_knee_joint",
+                "robot/right_ankle_pitch_joint",
+                "robot/right_ankle_roll_joint",
+                "robot/waist_yaw_joint",
+                "robot/left_shoulder_pitch_joint",
+                "robot/left_shoulder_roll_joint",
+                "robot/left_shoulder_yaw_joint",
+                "robot/left_elbow_joint",
+                "robot/left_wrist_roll_joint",
+                "robot/right_shoulder_pitch_joint",
+                "robot/right_shoulder_roll_joint",
+                "robot/right_shoulder_yaw_joint",
+                "robot/right_elbow_joint",
+                "robot/right_wrist_roll_joint"
+              ],
+              "default_joint_pos": [
+                -0.30000001192092896,
+                0.0,
+                0.0,
+                0.6299999952316284,
+                -0.33000001311302185,
+                0.0,
+                -0.30000001192092896,
+                0.0,
+                0.0,
+                0.6299999952316284,
+                -0.33000001311302185,
+                0.0,
+                0.0,
+                0.20000000298023224,
+                0.20000000298023224,
+                0.0,
+                0.6000000238418579,
+                0.0,
+                0.20000000298023224,
+                -0.20000000298023224,
+                0.0,
+                0.6000000238418579,
+                0.0
+              ],
+              "clip_actions": 10.0,
+              "motions": [
+                {
+                  "name": "dance1",
+                  "path": "assets/dance1.npz",
+                  "fps": 50.0,
+                  "anchor_body_name": "torso_link",
+                  "body_names": [
+                    "pelvis",
+                    "left_hip_pitch_link",
+                    "left_hip_roll_link",
+                    "left_hip_yaw_link",
+                    "left_knee_link",
+                    "left_ankle_pitch_link",
+                    "left_ankle_roll_link",
+                    "right_hip_pitch_link",
+                    "right_hip_roll_link",
+                    "right_hip_yaw_link",
+                    "right_knee_link",
+                    "right_ankle_pitch_link",
+                    "right_ankle_roll_link",
+                    "torso_link",
+                    "head_link",
+                    "left_shoulder_pitch_link",
+                    "left_shoulder_roll_link",
+                    "left_shoulder_yaw_link",
+                    "left_elbow_link",
+                    "left_wrist_roll_rubber_hand",
+                    "right_shoulder_pitch_link",
+                    "right_shoulder_roll_link",
+                    "right_shoulder_yaw_link",
+                    "right_elbow_link",
+                    "right_wrist_roll_rubber_hand"
+                  ],
+                  "dataset_joint_names": [
+                    "robot/left_hip_pitch_joint",
+                    "robot/left_hip_roll_joint",
+                    "robot/left_hip_yaw_joint",
+                    "robot/left_knee_joint",
+                    "robot/left_ankle_pitch_joint",
+                    "robot/left_ankle_roll_joint",
+                    "robot/right_hip_pitch_joint",
+                    "robot/right_hip_roll_joint",
+                    "robot/right_hip_yaw_joint",
+                    "robot/right_knee_joint",
+                    "robot/right_ankle_pitch_joint",
+                    "robot/right_ankle_roll_joint",
+                    "robot/waist_yaw_joint",
+                    "robot/left_shoulder_pitch_joint",
+                    "robot/left_shoulder_roll_joint",
+                    "robot/left_shoulder_yaw_joint",
+                    "robot/left_elbow_joint",
+                    "robot/left_wrist_roll_joint",
+                    "robot/right_shoulder_pitch_joint",
+                    "robot/right_shoulder_roll_joint",
+                    "robot/right_shoulder_yaw_joint",
+                    "robot/right_elbow_joint",
+                    "robot/right_wrist_roll_joint"
+                  ],
+                  "default": true,
+                  "time_source": "sim"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

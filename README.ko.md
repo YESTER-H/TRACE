@@ -1,4 +1,4 @@
-# TRACE: 학습된 낙상 회복을 갖춘 ROBOTIS K1 휴머노이드 댄스 트래킹
+# TRACE: Tracking and Recovery Adaptive Control with Experts for the ROBOTIS K1 Humanoid
 
 [English](README.md) | **한국어**
 

@@ -1,0 +1,101 @@
+# SPDX-License-Identifier: Apache-2.0
+"""Recovery-only diagnostics plus the U1.5 integrated TRACE tasks (Integrated-U15, -Balanced)."""
+import gymnasium as gym
+
+# Literal IDs are also discoverable by train.py's pre-AppLauncher AST preflight.
+gym.register(
+    id="Cyclo-TRACE-K1-Rev1-Recovery-Only",
+    entry_point=__name__+".environment:TraceRecoveryEnv",disable_env_checker=True,
+    kwargs={"env_cfg_entry_point":__name__+".env_cfg:TraceRecoveryEnvCfg",
+            "rsl_rl_cfg_entry_point":__name__+".runner_cfg:TraceRecoveryRunnerCfg"},
+)
+gym.register(
+    id="Cyclo-TRACE-K1-Rev1-Recovery-Only-Play",
+    entry_point=__name__+".environment:TraceRecoveryEnv",disable_env_checker=True,
+    kwargs={"env_cfg_entry_point":__name__+".env_cfg:TraceRecoveryPlayEnvCfg",
+            "rsl_rl_cfg_entry_point":__name__+".runner_cfg:TraceRecoveryRunnerCfg"},
+)
+gym.register(
+    id="Cyclo-TRACE-K1-Rev1-Recovery-Motion-Experts",
+    entry_point=__name__+".environment:TraceRecoveryEnv",disable_env_checker=True,
+    kwargs={"env_cfg_entry_point":__name__+".env_cfg:TraceRecoveryMotionExpertEnvCfg",
+            "rsl_rl_cfg_entry_point":__name__+".runner_cfg:TraceRecoveryMotionExpertRunnerCfg"},
+)
+gym.register(
+    id="Cyclo-TRACE-K1-Rev1-Recovery-Motion-Experts-Play",
+    entry_point=__name__+".environment:TraceRecoveryEnv",disable_env_checker=True,
+    kwargs={"env_cfg_entry_point":__name__+".env_cfg:TraceRecoveryMotionExpertPlayEnvCfg",
+            "rsl_rl_cfg_entry_point":__name__+".runner_cfg:TraceRecoveryMotionExpertRunnerCfg"},
+)
+gym.register(
+    id="Cyclo-TRACE-K1-Rev1-Recovery-Paper-Aligned",
+    entry_point=__name__+".environment:TraceRecoveryEnv",disable_env_checker=True,
+    kwargs={"env_cfg_entry_point":__name__+".env_cfg:TraceRecoveryPaperAlignedEnvCfg",
+            "rsl_rl_cfg_entry_point":__name__+".runner_cfg:TraceRecoveryPaperAlignedRunnerCfg"},
+)
+gym.register(
+    id="Cyclo-TRACE-K1-Rev1-Recovery-Paper-Aligned-Play",
+    entry_point=__name__+".environment:TraceRecoveryEnv",disable_env_checker=True,
+    kwargs={"env_cfg_entry_point":__name__+".env_cfg:TraceRecoveryPaperAlignedPlayEnvCfg",
+            "rsl_rl_cfg_entry_point":__name__+".runner_cfg:TraceRecoveryPaperAlignedRunnerCfg"},
+)
+gym.register(
+    id="Cyclo-TRACE-K1-Rev1-Integrated-U15",
+    entry_point=__name__+".environment:TraceIntegratedEnv",disable_env_checker=True,
+    kwargs={"env_cfg_entry_point":__name__+".env_cfg:TraceIntegratedEnvCfg",
+            "rsl_rl_cfg_entry_point":__name__+".runner_cfg:TraceIntegratedRunnerCfg"},
+)
+gym.register(
+    id="Cyclo-TRACE-K1-Rev1-Integrated-U15-Play",
+    entry_point=__name__+".environment:TraceIntegratedEnv",disable_env_checker=True,
+    kwargs={"env_cfg_entry_point":__name__+".env_cfg:TraceIntegratedPlayEnvCfg",
+            "rsl_rl_cfg_entry_point":__name__+".runner_cfg:TraceIntegratedRunnerCfg"},
+)
+gym.register(
+    id="Cyclo-TRACE-K1-Rev1-Integrated-U15-Balanced",
+    entry_point=__name__+".environment:TraceIntegratedEnv",disable_env_checker=True,
+    kwargs={"env_cfg_entry_point":__name__+".env_cfg:TraceIntegratedBalancedEnvCfg",
+            "rsl_rl_cfg_entry_point":__name__+".runner_cfg:TraceIntegratedBalancedRunnerCfg"},
+)
+gym.register(
+    id="Cyclo-TRACE-K1-Rev1-Integrated-U15-Balanced-Play",
+    entry_point=__name__+".environment:TraceIntegratedEnv",disable_env_checker=True,
+    kwargs={"env_cfg_entry_point":__name__+".env_cfg:TraceIntegratedBalancedPlayEnvCfg",
+            "rsl_rl_cfg_entry_point":__name__+".runner_cfg:TraceIntegratedBalancedRunnerCfg"},
+)
+gym.register(
+    id="Cyclo-TRACE-K1-Rev1-Integrated-Gated",
+    entry_point=__name__+".environment:TraceIntegratedEnv",disable_env_checker=True,
+    kwargs={"env_cfg_entry_point":__name__+".env_cfg:TraceIntegratedGatedEnvCfg",
+            "rsl_rl_cfg_entry_point":__name__+".runner_cfg:TraceIntegratedGatedRunnerCfg"},
+)
+gym.register(
+    id="Cyclo-TRACE-K1-Rev1-Integrated-Gated-Play",
+    entry_point=__name__+".environment:TraceIntegratedEnv",disable_env_checker=True,
+    kwargs={"env_cfg_entry_point":__name__+".env_cfg:TraceIntegratedGatedPlayEnvCfg",
+            "rsl_rl_cfg_entry_point":__name__+".runner_cfg:TraceIntegratedGatedRunnerCfg"},
+)
+gym.register(
+    id="Cyclo-TRACE-K1-Rev1-Integrated-Gated-Lookahead",
+    entry_point=__name__+".environment:TraceIntegratedEnv",disable_env_checker=True,
+    kwargs={"env_cfg_entry_point":__name__+".env_cfg:TraceIntegratedGatedLookaheadEnvCfg",
+            "rsl_rl_cfg_entry_point":__name__+".runner_cfg:TraceIntegratedGatedLookaheadRunnerCfg"},
+)
+gym.register(
+    id="Cyclo-TRACE-K1-Rev1-Recovery-Only-PhysX",
+    entry_point=__name__+".environment:TraceRecoveryEnv",disable_env_checker=True,
+    kwargs={"env_cfg_entry_point":__name__+".env_cfg:TraceRecoveryPhysXEnvCfg",
+            "rsl_rl_cfg_entry_point":__name__+".runner_cfg:TraceRecoveryRunnerCfg"},
+)
+gym.register(
+    id="Cyclo-TRACE-K1-Rev1-Integrated-Gated-ProneTrim",
+    entry_point=__name__+".environment:TraceIntegratedEnv",disable_env_checker=True,
+    kwargs={"env_cfg_entry_point":__name__+".env_cfg:TraceIntegratedGatedProneTrimEnvCfg",
+            "rsl_rl_cfg_entry_point":__name__+".runner_cfg:TraceIntegratedGatedProneTrimRunnerCfg"},
+)
+gym.register(
+    id="Cyclo-TRACE-K1-Rev1-Integrated-Gated-ProneTrim-Play",
+    entry_point=__name__+".environment:TraceIntegratedEnv",disable_env_checker=True,
+    kwargs={"env_cfg_entry_point":__name__+".env_cfg:TraceIntegratedGatedProneTrimPlayEnvCfg",
+            "rsl_rl_cfg_entry_point":__name__+".runner_cfg:TraceIntegratedGatedProneTrimRunnerCfg"},
+)

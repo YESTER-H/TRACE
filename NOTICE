@@ -1,0 +1,13 @@
+TRACE
+Copyright 2026 Jaehyeok Eo (YESTER-H)
+
+This project is an add-on to ROBOTIS cyclo_lab (https://github.com/ROBOTIS-GIT/cyclo_lab),
+licensed under the Apache License 2.0. Files under overlay/ and patches/ are derived from or
+extend cyclo_lab and keep its license.
+
+cyclo_lab builds on Isaac Lab (https://github.com/isaac-sim/IsaacLab),
+Copyright (c) 2022-2025, The Isaac Lab Project Developers, BSD-3-Clause.
+
+overlay/source/cyclo_lab/data/motions/K1_rev1/trace_inputs/tracking.npz is the dance1 motion
+from cyclo_lab. The get-up motions (supine*, prone*) were retargeted to the K1 robot from the
+BONES-SEED motion dataset and remain subject to that dataset's terms.

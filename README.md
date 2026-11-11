@@ -1,5 +1,7 @@
 # TRACE: Dance Tracking with Learned Fall Recovery for the ROBOTIS K1 Humanoid
 
+**English** | [한국어](README.ko.md)
+
 [![IsaacSim](https://img.shields.io/badge/IsaacSim-6.0.0-silver.svg)](https://docs.isaacsim.omniverse.nvidia.com/6.0.0/index.html)
 [![Isaac Lab](https://img.shields.io/badge/IsaacLab-3.0.0--beta2-silver)](https://isaac-sim.github.io/IsaacLab/develop/index.html)
 [![Physics](https://img.shields.io/badge/physics-Newton-blueviolet)](https://github.com/newton-physics/newton)
@@ -252,7 +254,7 @@ Details, figures and the reasoning behind each step are in [docs/experiments.md]
 
 - **One lying heading in training.** Heading alignment fixes this at deployment. The proper fix is yaw-randomized Recovery resets.
 - **Simulation only.** No sim-to-real transfer was attempted. JIT/ONNX export of the two-input gated actor is not implemented.
-- **One dance.** The Tracking reference is the 6 s `dance1` clip from cyclo_lab. A real choreography (a K-pop dance practice video retargeted through GEM-X → SOMA → K1) was prepared but not trained into the final policy. That data is not included because its redistribution rights are unclear.
+- **One dance.** The Tracking reference is the 6 s `dance1` clip from cyclo_lab. A multi-motion Tracking library would be needed to switch between dances.
 - **One seed.** Every run used seed 42 once. The iteration at which a plateau breaks varied a lot between similar runs.
 
 ## Acknowledgements

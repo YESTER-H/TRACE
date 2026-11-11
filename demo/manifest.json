@@ -1,7 +1,8 @@
 {
   "format": 8,
   "version": "0.12.12",
-  "uses_custom_js": false,
+  "uses_custom_js": true,
+  "plugins": "assets/plugins.js",
   "viewer_gui": [
     {
       "type": "folder",
@@ -69,8 +70,8 @@
               0.0,
               0.0
             ],
-            "distance": 2.8,
-            "elevation": -5.0,
+            "distance": 3.2,
+            "elevation": -10.0,
             "azimuth": 120.0,
             "origin_type": "ASSET_BODY",
             "enable_reflections": true,
@@ -79,7 +80,7 @@
             "width": 320,
             "fovy": 55.0,
             "entity_name": "robot",
-            "body_name": ""
+            "body_name": "pelvis"
           },
           "mdps": [
             {
@@ -191,34 +192,16 @@
                     "history_length": 4
                   },
                   {
-                    "name": "motion_anchor_ori_b",
-                    "onnx": "mdp/trace_run_23/obs/motion_anchor_ori_b.onnx",
-                    "size": 6,
-                    "input_slots": [
-                      {
-                        "command": "motion",
-                        "field": "anchor_quat_w",
-                        "input": "command__motion_anchor_quat_w",
-                        "shape": [
-                          1,
-                          4
-                        ]
-                      },
-                      {
-                        "command": "motion",
-                        "field": "robot_anchor_quat_w",
-                        "input": "command__motion_robot_anchor_quat_w",
-                        "shape": [
-                          1,
-                          4
-                        ]
-                      }
-                    ],
-                    "func": "mjlab.tasks.tracking.mdp.observations:motion_anchor_ori_b",
-                    "params": {
-                      "command_name": "motion"
-                    },
-                    "history_length": 4
+                    "name": "TraceAlignedAnchorOri",
+                    "supine_head": 1.5332826371472,
+                    "prone_head": -1.5643876717408804,
+                    "settle_steps": 15,
+                    "relock_steps": 150,
+                    "lying_pelvis": 0.3,
+                    "still_linear": 0.5,
+                    "still_angular": 1.5,
+                    "history": 4,
+                    "command_name": "motion"
                   },
                   {
                     "name": "base_ang_vel",
@@ -489,6 +472,67 @@
                     ]
                   },
                   "label": "Lie down face down (Prone)"
+                },
+                {
+                  "name": "shove",
+                  "mode": "manual",
+                  "onnx": "mdp/trace_run_23/event/shove.onnx",
+                  "rand_dim": 6,
+                  "rand_ranges": [
+                    [
+                      -3.0,
+                      3.0
+                    ],
+                    [
+                      -3.0,
+                      3.0
+                    ],
+                    [
+                      0.0,
+                      0.0
+                    ],
+                    [
+                      0.0,
+                      0.0
+                    ],
+                    [
+                      0.0,
+                      0.0
+                    ],
+                    [
+                      0.0,
+                      0.0
+                    ]
+                  ],
+                  "input_slots": [
+                    {
+                      "entity": "robot",
+                      "field": "root_link_vel_w",
+                      "input": "robot__root_link_vel_w",
+                      "shape": [
+                        1,
+                        6
+                      ]
+                    }
+                  ],
+                  "write_targets": [
+                    {
+                      "kind": "root_velocity",
+                      "entity": "robot",
+                      "fields": [
+                        "velocity"
+                      ],
+                      "outputs": [
+                        "robot__root_velocity__velocity"
+                      ]
+                    }
+                  ],
+                  "func": "mjlab.envs.mdp.events:push_by_setting_velocity",
+                  "doc": "Push an entity by overwriting its root velocity with a sampled offset.",
+                  "params": {
+                    "velocity_range": "dict"
+                  },
+                  "label": "Shove (random push)"
                 }
               ]
             }

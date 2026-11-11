@@ -65,11 +65,13 @@
   <div class="howto">
     <div><b>Watch it dance</b>The robot follows the dance reference (green ghost) from the start.</div>
     <div><b>Knock it down</b>Under <i>Events</i>, press <i>Lie down face up</i> or <i>Lie down face down</i>. The robot gets up within about 3–5 s and dances on.</div>
-    <div><b>Push or pull</b>Open <i>Interact</i>, choose <i>Push</i> and click the robot, or <i>Pull</i> and drag a body part.</div>
+    <div><b>Shove it</b>Press <i>Shove (random push)</i> under <i>Events</i>, or open <i>Interact</i> and <i>Push</i> / <i>Pull</i> the robot with the mouse.</div>
     <div><b>Reset</b>Press <i>Reset</i> to stand the robot at the start of the dance.</div>
   </div>
-  <p class="note">The Recovery expert was trained lying in one heading relative to the dance. The lie-down buttons use that heading.
-    After a push or pull, the robot can land in another heading, and then it may not get up; press <i>Reset</i> if that happens.</p>
+  <p class="note"><b>Heading alignment.</b> The Recovery expert was trained lying in one heading relative to the dance.
+    Once a fallen robot has lain still for 0.3 s, the demo turns the dance reference to the robot's lying heading,
+    so it gets up from any direction and dances on facing its new heading. In a CPU-MuJoCo push test, falls that came
+    back to the dance went from 13/26 without it to 26/26 with it.</p>
 
   <h2>Results</h2>
   <figure>

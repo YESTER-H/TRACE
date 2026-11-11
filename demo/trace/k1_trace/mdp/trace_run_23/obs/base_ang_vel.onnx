@@ -1,0 +1,16 @@
+mjswan0.12.122Umjswan obs graph 'base_ang_vel', traced from mjlab.envs.mdp.observations:base_ang_vel:˜
+9
+robot__root_link_ang_vel_bvalue
+Identity_0"Identity
+main_graphZ1
+robot__root_link_ang_vel_b
+
+batch
+b
+value
+
+batch
+Br
+mjswan.kindobsr
+mjswan.termbase_ang_velr7
+mjswan.func(mjlab.envs.mdp.observations:base_ang_vel

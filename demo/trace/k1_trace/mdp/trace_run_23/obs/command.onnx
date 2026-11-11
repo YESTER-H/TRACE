@@ -1,0 +1,16 @@
+mjswan0.12.122Vmjswan obs graph 'command', traced from mjlab.envs.mdp.observations:generated_commands:’
+6
+command__motion_commandvalue
+Identity_0"Identity
+main_graphZ.
+command__motion_command
+
+batch
+.b
+value
+
+batch
+.Br
+mjswan.kindobsr
+mjswan.termcommandr=
+mjswan.func.mjlab.envs.mdp.observations:generated_commands

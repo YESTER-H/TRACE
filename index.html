@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TRACE: Dance Tracking with Learned Fall Recovery for the ROBOTIS K1 Humanoid</title>
+  <meta name="description" content="One RL policy that dances, falls, gets up and dances on. Interactive in-browser demo (MuJoCo WebAssembly + ONNX Runtime Web).">
+  <style>
+    :root { --fg: #1f2328; --muted: #59636e; --line: #d1d9e0; --accent: #0969da; --bg-soft: #f6f8fa; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", "Noto Sans KR", Helvetica, Arial, sans-serif; color: var(--fg); line-height: 1.6; }
+    main { max-width: 1040px; margin: 0 auto; padding: 0 20px 64px; }
+    header { text-align: center; padding: 56px 20px 24px; }
+    h1 { font-size: 2.1rem; line-height: 1.25; margin: 0 0 12px; }
+    h1 span { display: block; font-size: 1.25rem; font-weight: 500; color: var(--muted); margin-top: 8px; }
+    .author { color: var(--muted); margin: 8px 0 20px; }
+    .links a { display: inline-block; margin: 4px; padding: 8px 18px; border-radius: 999px; background: var(--fg); color: #fff; text-decoration: none; font-weight: 600; }
+    .links a.secondary { background: #fff; color: var(--fg); border: 1px solid var(--line); }
+    h2 { font-size: 1.45rem; margin: 48px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+    .demo { position: relative; width: 100%; aspect-ratio: 16 / 9; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: #000; }
+    .demo iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+    .note { font-size: .92rem; color: var(--muted); }
+    .howto { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; margin-top: 16px; }
+    .howto div { background: var(--bg-soft); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+    .howto b { display: block; margin-bottom: 4px; }
+    figure { margin: 16px 0; text-align: center; }
+    figure img { max-width: 100%; border-radius: 8px; border: 1px solid var(--line); }
+    figcaption { font-size: .92rem; color: var(--muted); margin-top: 6px; }
+    table { border-collapse: collapse; width: 100%; font-size: .95rem; }
+    th, td { border: 1px solid var(--line); padding: 7px 10px; text-align: left; }
+    th { background: var(--bg-soft); }
+    code { background: var(--bg-soft); padding: 1px 5px; border-radius: 4px; font-size: .9em; }
+    footer { text-align: center; color: var(--muted); font-size: .88rem; padding: 32px 20px; border-top: 1px solid var(--line); }
+    a { color: var(--accent); }
+  </style>
+</head>
+<body>
+<header>
+  <h1>TRACE<span>Dance Tracking with Learned Fall Recovery for the ROBOTIS K1 Humanoid</span></h1>
+  <p class="author">Jaehyeok Eo (<a href="https://github.com/YESTER-H">YESTER-H</a>)</p>
+  <p class="links">
+    <a href="#demo">Interactive Demo</a>
+    <a class="secondary" href="https://github.com/YESTER-H/TRACE">Code</a>
+    <a class="secondary" href="https://github.com/YESTER-H/TRACE/blob/main/docs/experiments.md">Experiments</a>
+  </p>
+</header>
+
+<main>
+  <h2>Overview</h2>
+  <p>
+    <b>TRACE</b> is a single reinforcement-learning policy for the ROBOTIS K1 humanoid (23 DoF). It
+    <b>tracks a dance</b>, <b>gets up by itself</b> after falling face up or face down, and
+    <b>goes back to the dance</b> without any external mode switch. A learned proprioceptive gate blends
+    a Tracking expert and a Recovery expert. The policy was trained in Isaac Lab with the Newton
+    (MuJoCo-Warp) backend.
+  </p>
+
+  <h2 id="demo">Interactive Demo</h2>
+  <div class="demo">
+    <iframe src="./demo/" title="TRACE interactive demo" allow="fullscreen; xr-spatial-tracking" loading="lazy"></iframe>
+  </div>
+  <p class="note">Physics (MuJoCo WebAssembly) and the policy (ONNX Runtime Web) run on your device. The first load takes a few seconds.
+    <a href="./demo/" target="_blank">Open the demo in a full window</a>.</p>
+
+  <div class="howto">
+    <div><b>Watch it dance</b>The robot follows the dance reference (green ghost) from the start.</div>
+    <div><b>Knock it down</b>Under <i>Events</i>, press <i>Lie down face up</i> or <i>Lie down face down</i>. The robot gets up within about 3–5 s and dances on.</div>
+    <div><b>Push or pull</b>Open <i>Interact</i>, choose <i>Push</i> and click the robot, or <i>Pull</i> and drag a body part.</div>
+    <div><b>Reset</b>Press <i>Reset</i> to stand the robot at the start of the dance.</div>
+  </div>
+  <p class="note">The Recovery expert was trained lying in one heading relative to the dance. The lie-down buttons use that heading.
+    After a push or pull, the robot can land in another heading, and then it may not get up; press <i>Reset</i> if that happens.</p>
+
+  <h2>Results</h2>
+  <figure>
+    <img src="static/teaser_run23.gif" alt="Three K1 robots start lying face down, lying face up and standing; all end up dancing" width="720">
+    <figcaption>One policy, three starts (Isaac Lab / Newton). Left: Prone. Middle: Supine. Right: standing.</figcaption>
+  </figure>
+  <table>
+    <tr><th>Metric (run 23, iteration 40,600)</th><th>Supine</th><th>Prone</th></tr>
+    <tr><td>Recovery success at the end of training</td><td>0.997</td><td>0.999</td></tr>
+    <tr><td>Iteration where success first reaches 0.95</td><td>~2.1k</td><td>~4.0k</td></tr>
+    <tr><td>Frame-0 eval: step where Tracking starts (Newton)</td><td>261 (5.2 s)</td><td>338 (6.8 s)</td></tr>
+    <tr><td>Same in CPU MuJoCo (sim-to-sim check)</td><td>206 (4.1 s)</td><td>281 (5.6 s)</td></tr>
+    <tr><td>Perturbed fixed starts recovered (both motions)</td><td colspan="2">192 / 192</td></tr>
+  </table>
+
+  <h2>Method</h2>
+  <ul>
+    <li><b>Two experts</b> (Tracking and Recovery, 508→512→256→128→23 MLPs) and a <b>gate</b> on 4 frames of proprioception (ang. velocity, joint position/velocity, last action, gravity).</li>
+    <li><b>Hidden get-up references</b>: the actor sees only the dance reference; Supine and Prone get-ups shape the reward only.</li>
+    <li><b>Transition</b>: 1.5 s in which the Tracking reward is ramped in after the robot stands up.</li>
+    <li><b>Adaptive reset sampling</b> with a 2 s failure look-ahead (BeyondMimic) and trimmed get-up references.</li>
+  </ul>
+  <p>Builds on <a href="https://github.com/ROBOTIS-GIT/cyclo_lab">ROBOTIS cyclo_lab</a>, StableMimic and BeyondMimic.
+    The demo is built with <a href="https://github.com/ttktjmt/mjswan">mjswan</a> (MuJoCo 3.11, mjlab 1.6).</p>
+</main>
+
+<footer>
+  TRACE · Apache-2.0 · <a href="https://github.com/YESTER-H/TRACE">github.com/YESTER-H/TRACE</a>
+</footer>
+</body>
+</html>

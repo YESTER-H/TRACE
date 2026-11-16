@@ -11,6 +11,7 @@ The final policy (run 24; `TRACE_POLICY=run23` for the previous one) runs in the
 | `sim2sim.py` | Sim-to-sim check in CPU MuJoCo from the Stand / Supine / Prone frame-0 starts |
 | `build_web.py` | Builds the mjswan app: mjlab env config, ONNX export, motion clip, lie-down buttons |
 | `check_dist.py` | Runs the built bundle (`dist/` scene + ONNX via onnxruntime) in Python |
+| `make_teaser.py` | Renders the README teaser: three robots in one MuJoCo scene, lying robots with their heads away from the camera |
 | `push_test.py` | Push test in CPU MuJoCo with heading alignment on and off (one case per worker process) |
 | `ts/TraceAlignedAnchorOri.ts` | Browser observation term: anchor orientation with heading alignment |
 | `build_pages.sh` | Builds the GitHub Pages site (landing page + `demo/`) into `pages_out/` |

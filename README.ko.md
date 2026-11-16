@@ -9,13 +9,13 @@
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
 <p align="center">
-  <img src="assets/teaser_run23.gif" width="720" alt="엎드린 자세, 누운 자세, 선 자세에서 시작한 K1 세 대가 모두 춤을 추는 장면">
+  <img src="assets/teaser_run24.gif" width="800" alt="머리를 카메라 반대쪽으로 두고 엎드린 로봇과 누운 로봇, 그리고 선 로봇. 엎드린 로봇은 등을 보이며 일어난 뒤 돌아서고, 세 로봇 모두 춤을 춘다">
 </p>
 
 <p align="center"><b><a href="https://yester-h.github.io/TRACE/">▶ 브라우저에서 직접 해보기</a></b>: 정책이 내 기기에서 실시간으로 돌아갑니다(MuJoCo WebAssembly + ONNX).</p>
 
-<p align="center"><i>정책 하나, 시작 상태 세 가지(run 23, Isaac Lab / Newton). 왼쪽은 엎드린 자세(Prone), 가운데는 누운 자세(Supine), 오른쪽은 선 자세에서 시작합니다.
-필요하면 스스로 일어난 뒤 모두 같은 춤을 이어 갑니다.</i></p>
+<p align="center"><i>정책 하나(run 24), 시작 상태 세 가지, CPU MuJoCo. 왼쪽은 엎드린 자세(Prone), 가운데는 누운 자세(Supine), 오른쪽은 선 자세에서 시작합니다.
+누운 두 로봇은 머리를 카메라 반대쪽으로 둔 채 시작합니다. Supine은 앉아 일어나면서 바로 춤 방향을 보고 합류하고, Prone은 등을 보인 채 일어선 뒤 돌아서서 춤으로 복귀합니다.</i></p>
 
 **TRACE**(**T**racking and **R**ecovery via **A** gated **C**omposition of **E**xperts, 게이트로 조합한 전문가 정책을 통한 추종과 회복)는 ROBOTIS **K1** 휴머노이드(23 자유도)를 위한 단일 강화학습 정책입니다. 이 정책은
 
@@ -113,7 +113,10 @@ run 24의 Tracking은 일어난 직후 최대 180°의 방향 오차를 안고 �
 </p>
 
 <details>
-<summary>run 23 학습 곡선과 누운 방향 민감도</summary>
+<summary>run 23: Isaac Lab / Newton 영상, 학습 곡선, 누운 방향 민감도</summary>
+<p align="center">
+  <img src="assets/teaser_run23.gif" width="720" alt="run 23, Isaac Lab / Newton: 학습한 방향으로 엎드린 로봇, 누운 로봇, 선 로봇이 모두 춤을 추는 장면">
+</p>
 <p align="center">
   <img src="assets/run23_recovery_success.png" width="48%" alt="run 23 학습 중 회복 성공률">
   <img src="assets/run23_tracking_failure.png" width="48%" alt="run 23 학습 중 Tracking 실패율">
@@ -264,7 +267,7 @@ TRACE/
 │   └── run23_gated_prone_trim/              # model_40600.pt + params
 ├── web/                            # 브라우저 데모 (mjswan): MuJoCo 이식, ONNX export, Pages 빌드
 ├── sim2sim/                        # MuJoCo 네이티브 뷰어와 엄격한 sim2sim 스윕
-├── assets/                         # README용 GIF와 그래프
+├── assets/                         # README용 GIF와 그래프 (teaser: web/make_teaser.py)
 └── docs/experiments.md             # 전체 실험 이력 (24 run, 영문)
 ```
 

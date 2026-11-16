@@ -9,13 +9,13 @@
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
 <p align="center">
-  <img src="assets/teaser_run23.gif" width="720" alt="Three K1 robots start lying face up, face down and standing; all end up dancing">
+  <img src="assets/teaser_run24.gif" width="800" alt="Three K1 robots: one lying face down and one lying face up, both with their heads away from the camera, and one standing; the face-down robot gets up facing away and turns around; all end up dancing">
 </p>
 
 <p align="center"><b><a href="https://yester-h.github.io/TRACE/">▶ Try it in your browser</a></b>: the policy runs live on your device (MuJoCo WebAssembly + ONNX).</p>
 
-<p align="center"><i>One policy, three starts (run 23, Isaac Lab / Newton). Left: lying face down (Prone). Middle: lying face up (Supine). Right: standing.
-All three get up when needed and then follow the same dance.</i></p>
+<p align="center"><i>One policy (run 24), three starts, in CPU MuJoCo. Left: lying face down (Prone). Middle: lying face up (Supine). Right: standing.
+Both lying robots start with their heads away from the camera. Supine sits up facing the dance and joins in. Prone stands up facing away, then turns around to rejoin the dance.</i></p>
 
 **TRACE** (**T**racking and **R**ecovery via **A** gated **C**omposition of **E**xperts) is a single reinforcement-learning policy for the ROBOTIS **K1** humanoid (23 DoF) that
 
@@ -116,7 +116,10 @@ training.
 </p>
 
 <details>
-<summary>Run 23 training curves and heading sensitivity</summary>
+<summary>Run 23: Isaac Lab / Newton footage, training curves and heading sensitivity</summary>
+<p align="center">
+  <img src="assets/teaser_run23.gif" width="720" alt="Run 23 in Isaac Lab / Newton: three K1 robots start lying face down, face up and standing, in the trained lying heading; all end up dancing">
+</p>
 <p align="center">
   <img src="assets/run23_recovery_success.png" width="48%" alt="Recovery success over training, run 23">
   <img src="assets/run23_tracking_failure.png" width="48%" alt="Tracking failure over training, run 23">
@@ -267,7 +270,7 @@ TRACE/
 │   └── run23_gated_prone_trim/              # model_40600.pt + params
 ├── web/                            # browser demo (mjswan): MuJoCo port, ONNX export, Pages build
 ├── sim2sim/                        # native MuJoCo viewer and the strict sim-to-sim sweep
-├── assets/                         # GIF and figures for this README
+├── assets/                         # GIFs and figures for this README (teaser: web/make_teaser.py)
 └── docs/experiments.md             # the full run history (24 runs)
 ```
 

@@ -17,7 +17,12 @@ from torch import nn
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent
-CHECKPOINT = REPO / "checkpoints/run23_gated_prone_trim/model_40600.pt"
+CHECKPOINTS = {
+    "run23": REPO / "checkpoints/run23_gated_prone_trim/model_40600.pt",
+    "run24": REPO / "checkpoints/run24_gated_prone_trim_yawrand/model_29999.pt",  # Recovery yaw randomized
+}
+POLICY = os.environ.get("TRACE_POLICY", "run24")
+CHECKPOINT = CHECKPOINTS[POLICY]
 MOTIONS = REPO / "overlay/source/cyclo_lab/data/motions/K1_rev1"
 MOTION_FILES = {
     "tracking": MOTIONS / "trace_inputs/tracking.npz",

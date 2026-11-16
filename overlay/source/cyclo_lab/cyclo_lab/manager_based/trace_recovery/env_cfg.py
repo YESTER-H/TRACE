@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Additive TRACE Recovery-only task; no upstream mimic/asset modification."""
 import copy
+import math
 import os
 from dataclasses import fields
 from isaaclab.utils import configclass
@@ -326,3 +327,19 @@ class TraceIntegratedGatedProneTrimPlayEnvCfg(TraceIntegratedGatedPlayEnvCfg):
     def __post_init__(self):
         super().__post_init__()
         self.commands.reference_trajectory.prone_trajectory_file = PRONE_TRIM80_FILE
+
+
+@configclass
+class TraceIntegratedGatedProneTrimYawRandEnvCfg(TraceIntegratedGatedProneTrimEnvCfg):
+    """Run 23 + Recovery reset yaw uniform in [-pi, pi): the robot lies in any heading relative to the dance,
+    gets up and turns to the dance heading itself (no deployment heading alignment needed)."""
+    def __post_init__(self):
+        super().__post_init__()
+        self.commands.reference_trajectory.recovery_reset_yaw_range = (-math.pi, math.pi)
+
+
+@configclass
+class TraceIntegratedGatedProneTrimYawRandPlayEnvCfg(TraceIntegratedGatedProneTrimPlayEnvCfg):
+    def __post_init__(self):
+        super().__post_init__()
+        self.commands.reference_trajectory.recovery_reset_yaw_range = (-math.pi, math.pi)

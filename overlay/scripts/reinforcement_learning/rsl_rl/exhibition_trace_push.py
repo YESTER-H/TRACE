@@ -4,9 +4,10 @@
 The integrated gated TRACE policy needs no mode switch from the environment: the actor sees only the live
 Tracking reference and proprioception, and its proprioceptive gate picks the Tracking or Recovery expert. So the
 robot simply runs on without resets (every termination is ignored except a NaN state) while the dance reference
-keeps looping. Once a fallen robot lies still, the dance reference is turned to its lying heading
-(trace_heading_alignment): Recovery was trained lying in one heading only, and without this a robot pushed
-sideways rarely gets up (push test, model_40600: 15/44 -> 45/45 back to the dance).
+keeps looping. Optional heading alignment (--align-heading or G; off by default): once a fallen robot lies
+still, the dance reference is turned to its lying heading (trace_heading_alignment). Run 23 (model_40600) was
+trained lying in one heading only and needs it (push test 15/44 -> 45/45 back to the dance); run 24 (YawRand,
+model_29999) was trained lying in any heading and gets up without it (19/20).
 
 Disturbances, in one of two modes (B toggles; the panel shows which):
   push mode          velocity impulse on the pelvis, like the training push event but stronger
@@ -19,7 +20,7 @@ Disturbances, in one of two modes (B toggles; the panel shows which):
   right-click drag   pull a body with the mouse (Newton viewer picking)
   R                  reset: stand at the dance start (the only reset; a robot that stays down stays down)
   C                  camera follow on/off (mouse / WASD camera when off)
-  G                  heading alignment on/off (for comparison; on by default)
+  G                  heading alignment on/off (off by default; --align-heading starts with it on)
 The same actions are buttons in the "TRACE exhibition" window, which also shows the state and fall statistics.
 --record writes the 3D view (without the panel) to session.mp4 in --output-dir, in simulation time.
 
@@ -30,7 +31,7 @@ Events (falls, recoveries, pushes, throws, resets) go to events.csv / summary.js
 usage (inside the container, /workspace/cyclo_lab):
   /isaac-sim/python.sh scripts/reinforcement_learning/rsl_rl/exhibition_trace_push.py \
     --eval-task Cyclo-TRACE-K1-Rev1-Integrated-Gated-ProneTrim-Play \
-    --output-dir logs/eval/exhibition_$(date +%H%M%S) --checkpoint <run>/model_40600.pt
+    --output-dir logs/eval/exhibition_$(date +%H%M%S) --checkpoint <run 24>/model_29999.pt
 """
 import argparse
 import csv
@@ -51,7 +52,9 @@ exhibition_parser.add_argument('--ball-speeds', type=float, nargs=3, default=(10
                                help='light / medium / strong ball launch speed (m/s)')
 exhibition_parser.add_argument('--ball-seconds', type=float, default=3., help='a thrown ball is removed after this long')
 exhibition_parser.add_argument('--balls', type=int, default=2, help='balls per strength level (rapid throws)')
-exhibition_parser.add_argument('--mode', choices=('push', 'ball'), default='push', help='start mode')
+exhibition_parser.add_argument('--mode', choices=('push', 'ball'), default='ball', help='start mode')
+exhibition_parser.add_argument('--align-heading', action='store_true',
+                               help='start with heading alignment on (needed for run 23 and earlier; G toggles)')
 exhibition_parser.add_argument('--record', action='store_true', help='record the 3D view to session.mp4 in --output-dir')
 exhibition_parser.add_argument('--max-seconds', type=float, default=None, help='stop after this long (testing)')
 exhibition_parser.add_argument('--script', default=None,
@@ -199,6 +202,7 @@ class Show:
         self.pelvis = 0.
         self._keys_down = set()
         self.heading = holder['alignment'] = trace_heading_alignment.HeadingAlignment(c, base.step_dt)
+        self.heading.enabled = exhibition.align_heading
 
     # --- input -----------------------------------------------------------------------
     def poll_keys(self, viewer):

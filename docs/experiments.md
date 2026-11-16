@@ -1,6 +1,6 @@
 # Experiment history
 
-There were 23 training runs from 2026-08-10 to 2026-11-06. Unless noted, numbers are
+There were 24 training runs from 2026-08-10 to 2026-11-12. Unless noted, numbers are
 **recovery success averaged over the last 2,500 iterations**, and every run used seed 42 once.
 
 Each family of runs defines "recovery success" a little differently. Compare curve shapes, and compare
@@ -63,7 +63,8 @@ The StableMimic setting bundle breaks the Prone local optimum. In it, the robot 
 | 20 | 19 resumed to 50k | | Prone jumps 0.65 → 0.99 at ~35.8k. Frame-0 Prone reaches the dance. |
 | 21 | **Learned gate** | Proprioceptive gate replaces the oracle; Supine trim100; early-upright handoff | 0.83 / 0.65, Prone jumps only at ~49.2k. Frame-0 Supine is stuck half-up. |
 | 22 | + failure look-ahead | BeyondMimic 2 s kernel (decay 0.8), uniform:adaptive 50:50 | 0.997 / 0.998. **Frame-0 both reach the dance; 192/192 perturbed starts.** |
-| 23 | **+ Prone trim80 (final)** | Prone lead-in trimmed so both get-ups start moving at ~0.56 s | 0.997 / 0.999, **no plateau** (0.95 at ~2.1k / ~4.0k). Frame-0 Tracking starts at step 261 / 338 (run 22: 257 / 507). 192/192. |
+| 23 | + Prone trim80 | Prone lead-in trimmed so both get-ups start moving at ~0.56 s | 0.997 / 0.999, **no plateau** (0.95 at ~2.1k / ~4.0k). Frame-0 Tracking starts at step 261 / 338 (run 22: 257 / 507). 192/192. |
+| 24 | **+ heading randomization (final)** | Recovery reset yaw uniform in [−π, π); the dance reference is not turned (30k iterations) | 0.997 / 0.998 (0.95 at ~1.3k / ~3.6k). Frame-0 Tracking at step 261 / 328. **Random lying heading: 192/192** (run 23: 87/192). |
 
 ### Notes on the final runs
 
@@ -76,7 +77,30 @@ The StableMimic setting bundle breaks the Prone local optimum. In it, the robot 
   For Prone it is 40.3 and 36.8. The gate moves faster than the α ramp, but the blended action stays smooth.
   The expert-alignment loss keeps the two expert means close during Transition: P95 of |μ_T − μ_R| is 0.74–0.90.
 
-## Deployment: heading alignment and pushes
+## Phase 6: heading randomization (run 24)
+
+Run 23 needed a deployment-time fix for robots that land in a heading it never trained on (next section).
+Run 24 moves that into training. Each Recovery reset turns the get-up reference and the robot by a random yaw.
+The dance reference stays unturned, so the actor sees an arbitrary heading difference while lying and has to
+turn to the dance heading after it stands up.
+
+| Evaluation (same scripts, seed 42, gate only) | Run 23 | Run 24 |
+|---|---|---|
+| Fixed starts, trained heading | 192/192 | 192/192 |
+| Fixed starts, random lying heading | 87/192 | **192/192** |
+| Transition action-rate P95, Supine / Prone | 40.4 / 51.6 | 32.2 / 35.8 |
+| Push test, no alignment: falls → back to the dance | 44 → 15 | 20 → 19 |
+| 10 kg ball at 10 m/s, no alignment: falls → back | 27 → 10 | 14 → 13 |
+
+- **The feared 180° turn was not a problem.** The open risk was a 180° in-place turn during the 1.5 s
+  Transition ramp. Instead, Transition got smoother.
+- **Fewer falls at every checkpoint.** Push falls are 33–47 (mean ~40) across run 23 checkpoints, against
+  20–30 (mean ~26) for run 24, already from 5k iterations.
+- **The robustness is in the Tracking expert.** Forcing the Tracking expert alone gives 48 vs 22 falls.
+  Hypothesis, not verified: run 24's Tracking starts after standing up with a heading error of up to 180°,
+  which acts as perturbation training.
+
+## Deployment: heading alignment and pushes (run 23)
 
 - Recovery was trained with reset yaw noise of ±0.05 rad only. Frame-0 starts rotated by 90°, 180° or 270°
   succeed 0–6 % of the time.
@@ -87,3 +111,27 @@ The StableMimic setting bundle breaks the Prone local optimum. In it, the robot 
   5 times out of 5, and all 5 times it is back to the dance within 5.7–10.7 s.
 - Robots that fail to get up are not at joint limits or torque limits. The policy output almost freezes
   (action change 0.04 vs. 0.18).
+
+## Sim-to-sim: plain MuJoCo (run 23 and run 24)
+
+Training ran Newton with the MuJoCo-Warp solver. With the same solver settings and PD gains, the policies run
+in CPU MuJoCo 3.11 without retraining (`web/sim2sim.py`).
+
+| Frame-0 start in CPU MuJoCo | Run 23 | Run 24 |
+|---|---|---|
+| Supine: step where Tracking starts | 206 | 209 |
+| Prone: step where Tracking starts | 281 | 274 |
+| Dance joint error, last 2 s (rad, L2 over 23 joints) | 0.85 | 0.73 |
+| Push test (`web/push_test.py`, 48 pushes): falls → back, no alignment | 26 → 13 | **13 → 13** |
+| Same with heading alignment | 26 → 26 | 13 → 13 |
+
+The strict sweep (`sim2sim/strict_sweep.py`, run 23, 37 conditions × 4 scenarios × 8 seeds) changes one thing
+at a time away from training.
+- **Passes:** solver (Euler, elliptic cone, CG with 10 iterations, dt 1–2 ms, soft contact), friction 0.4–1.5,
+  mass ±15 % and random ±20 %, kp/kd ±20 %, effort ×0.7, joint friction 0.3, explicit PD, delay ≤ 20 ms,
+  and two randomized combinations.
+- **Weak:** 40 ms delay (stand 4/8, get-ups 3/8 each) and zero armature (stand 5/8).
+- **Breaks:** delay ≥ 60 ms and kp/kd ×0.5. Prone degrades at friction 0.2, effort ×0.4 and mass ×1.4.
+
+Training randomized none of friction, mass, gains or latency, so actuation latency is the main sim-to-real risk.
+Full table: `sim2sim/results/strict_20261111_2325/summary.md`.

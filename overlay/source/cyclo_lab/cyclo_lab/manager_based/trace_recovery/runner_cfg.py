@@ -116,3 +116,9 @@ class TraceIntegratedGatedLookaheadRunnerCfg(TraceIntegratedGatedRunnerCfg):
 class TraceIntegratedGatedProneTrimRunnerCfg(TraceIntegratedGatedRunnerCfg):
     experiment_name = "trace_newton_integrated_gated_prone_trim"
     run_name = "integrated_gated_prone_trim"
+
+
+@configclass
+class TraceIntegratedGatedProneTrimYawRandRunnerCfg(TraceIntegratedGatedProneTrimRunnerCfg):
+    experiment_name = "trace_newton_integrated_gated_prone_trim_yawrand"
+    run_name = "integrated_gated_prone_trim_yawrand"

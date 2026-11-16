@@ -2,7 +2,7 @@
 
 Live: **https://yester-h.github.io/TRACE/**
 
-The run-23 policy runs in the browser with [mjswan](https://github.com/ttktjmt/mjswan)
+The final policy (run 24; `TRACE_POLICY=run23` for the previous one) runs in the browser with [mjswan](https://github.com/ttktjmt/mjswan)
 (MuJoCo 3.11 WebAssembly + ONNX Runtime Web). Nothing runs on a server.
 
 | File | Purpose |
@@ -11,7 +11,7 @@ The run-23 policy runs in the browser with [mjswan](https://github.com/ttktjmt/m
 | `sim2sim.py` | Sim-to-sim check in CPU MuJoCo from the Stand / Supine / Prone frame-0 starts |
 | `build_web.py` | Builds the mjswan app: mjlab env config, ONNX export, motion clip, lie-down buttons |
 | `check_dist.py` | Runs the built bundle (`dist/` scene + ONNX via onnxruntime) in Python |
-| `push_test.py` | Push test in CPU MuJoCo with heading alignment on and off |
+| `push_test.py` | Push test in CPU MuJoCo with heading alignment on and off (one case per worker process) |
 | `ts/TraceAlignedAnchorOri.ts` | Browser observation term: anchor orientation with heading alignment |
 | `build_pages.sh` | Builds the GitHub Pages site (landing page + `demo/`) into `pages_out/` |
 | `site/index.html` | Landing page |
@@ -51,7 +51,9 @@ cyclo_lab `ai_sapiens` submodule). Its collision geometry matches the URDF used 
 - **Lie-down buttons** write frame 0 of the Supine / Prone get-up reference. The heading relative
   to the dance is the trained one. **Shove** adds a random horizontal pelvis velocity of up to
   3 m/s per axis.
-- **Heading alignment** (from the exhibition script) is ported as the hand-written TS term
+- **Heading alignment** is needed by run 23 only, so the default run-24 build leaves it off and uses mjlab's
+  traced `motion_anchor_ori_b`. `TRACE_ALIGN_HEADING=1` (or `TRACE_POLICY=run23`) turns it on. It comes from
+  the exhibition script and is ported as the hand-written TS term
   `TraceAlignedAnchorOri`. It replaces `motion_anchor_ori_b` and keeps its own 4-frame history,
   because mjswan's per-term history applies only to traced terms.
   - Once the pelvis has been below 0.3 m and still for 15 control steps, the dance reference is
@@ -60,8 +62,9 @@ cyclo_lab `ai_sapiens` submodule). Its collision geometry matches the URDF used 
   - It reads the heading again every 150 steps while the robot is still lying, and clears on reset.
   - The Python port (`trace_mujoco.HeadingAligner`) and the TS term agree to 1e-7 on a pushed
     rollout (`tests/ts_parity.mjs`).
-  - In `push_test.py` (8 directions × 1.8/2.4/3.0 m/s × 2 push times), falls that came back to
-    the dance were 13/26 without alignment and 26/26 with it.
+  - In `push_test.py` (8 directions × 1.8/2.4/3.0 m/s × 2 push times), run 23 fell 26 times. Without
+    alignment 13 of those came back to the dance; with it, all 26 did. Run 24 fell 13 times and all 13
+    came back, with or without alignment.
   - Set `TRACE_ALIGN_HEADING=0` to build without it.
 
 ## Known limitations

@@ -256,3 +256,15 @@ Evaluate with `-Gated-Play` (the sampler does not act there). Smoke: `smoke_trac
 Run 22 (gate, Supine trim100, early-upright handoff, 2 s failure look-ahead, 50:50 reset mix) with the Prone
 reference trimmed by 80 frames (data/motions/K1_rev1/get_up/prone/prone_getup_trim80.npz, written by
 scripts/tools/motion/trim_reference_motion.py). Both get-ups now start moving at ~0.56 s (frame ~28).
+
+## Integrated gated + Prone trim80 + heading randomization (final, run 24)
+
+- Cyclo-TRACE-K1-Rev1-Integrated-Gated-ProneTrim-YawRand (evaluate with -Gated-ProneTrim-YawRand-Play)
+
+Run 23 with `recovery_reset_yaw_range = (-pi, pi)` (commands.py; default (0, 0) keeps runs 14-23 unchanged).
+Each Recovery reset draws a per-env `recovery_yaw` and turns the Recovery reference rows (body pose/velocity
+accessors and `write_reference_state(yaw=)`) about world z through the env origin. The robot is placed in that turned
+pose. Dance (Tracking) targets are not turned, so the actor sees an arbitrary heading difference to the dance
+while lying and must turn to the dance heading after standing up. With it, the deployment-time heading alignment
+(trace_heading_alignment.py) is no longer needed: random-heading fixed starts 87/192 (run 23) -> 192/192.
+Smoke checks: scripts/reinforcement_learning/rsl_rl/smoke_trace_gated_prone_trim_yawrand.py.

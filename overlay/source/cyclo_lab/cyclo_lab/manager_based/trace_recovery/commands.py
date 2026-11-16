@@ -31,6 +31,9 @@ class RecoveryOnlyCommand(CommandTerm):
         self.tracking_phase = torch.zeros(self.num_envs, dtype=torch.long, device=self.device)
         self.recovery_reference_ids = torch.zeros_like(self.tracking_phase)
         self.recovery_phase = torch.zeros_like(self.tracking_phase)
+        # Per-env yaw (rad) of the Recovery reference about the env origin, drawn at each Recovery reset.
+        self.recovery_yaw = torch.zeros(self.num_envs, device=self.device)
+        self._yaw_random = tuple(cfg.recovery_reset_yaw_range) != (0., 0.)
         self.regimes = torch.ones_like(self.tracking_phase)  # Recovery-only, not an integrated state machine.
         self.just_reset = torch.zeros(self.num_envs, dtype=torch.bool, device=self.device)
         self.hold_steps = torch.zeros_like(self.tracking_phase)
@@ -82,6 +85,15 @@ class RecoveryOnlyCommand(CommandTerm):
             out[mask] = getattr(reference,name)[phases[mask]]
         return out
 
+    def _recovery_yaw_rows(self, x, orientation=False):
+        """Turn Recovery rows of [N, B, 3|4] reference data by recovery_yaw; other regimes (1 = Recovery) untouched."""
+        if not self._yaw_random:
+            return x
+        zero = torch.zeros_like(self.recovery_yaw)
+        q = quat_from_euler_xyz(zero, zero, self.recovery_yaw)[:,None].expand(-1,x.shape[1],-1)
+        turned = quat_mul(q,x) if orientation else quat_apply(q,x)
+        return torch.where((self.regimes==1)[:,None,None],turned,x)
+
     @property
     def joint_pos(self):
         return self._raw("joint_position")
@@ -92,19 +104,19 @@ class RecoveryOnlyCommand(CommandTerm):
 
     @property
     def body_pos_w(self):
-        return self._raw("body_position_w")[:,self.tracked_ids] + tensor(self._env.scene.env_origins)[:,None]
+        return self._recovery_yaw_rows(self._raw("body_position_w")[:,self.tracked_ids]) + tensor(self._env.scene.env_origins)[:,None]
 
     @property
     def body_quat_w(self):
-        return self._raw("body_orientation_w")[:,self.tracked_ids]
+        return self._recovery_yaw_rows(self._raw("body_orientation_w")[:,self.tracked_ids],orientation=True)
 
     @property
     def body_lin_vel_w(self):
-        return self._raw("body_linear_velocity_w")[:,self.tracked_ids]
+        return self._recovery_yaw_rows(self._raw("body_linear_velocity_w")[:,self.tracked_ids])
 
     @property
     def body_ang_vel_w(self):
-        return self._raw("body_angular_velocity_w")[:,self.tracked_ids]
+        return self._recovery_yaw_rows(self._raw("body_angular_velocity_w")[:,self.tracked_ids])
 
     @property
     def anchor_pos_w(self):
@@ -219,15 +231,21 @@ class RecoveryOnlyCommand(CommandTerm):
         self.pending_events[name] += count
 
     def write_reference_state(self, ids, ref, frames, perturb=False, pose_noise=None, velocity_noise=None,
-                              joint_position_noise=None, joint_velocity_noise=None, floor_clamp=True):
+                              joint_position_noise=None, joint_velocity_noise=None, floor_clamp=True, yaw=None):
         """Root link pose + actual COM velocity; no physics step is added.
 
         Noise arguments default to the Recovery cfg; integrated Tracking resets pass their own.
+        yaw: [len(ids)] turn of the reference state about the env origin (Recovery yaw randomization).
         """
-        p = ref.body_position_w[frames,0].clone()+tensor(self._env.scene.env_origins)[ids]
+        p = ref.body_position_w[frames,0].clone()
         q = ref.body_orientation_w[frames,0].clone()
         v = ref.body_linear_velocity_w[frames,0].clone()
         w = ref.body_angular_velocity_w[frames,0].clone()
+        if yaw is not None:
+            zero = torch.zeros_like(yaw)
+            turn = quat_from_euler_xyz(zero,zero,yaw)
+            p,q,v,w = quat_apply(turn,p),quat_mul(turn,q),quat_apply(turn,v),quat_apply(turn,w)
+        p += tensor(self._env.scene.env_origins)[ids]
         jq,jv = ref.joint_position[frames].clone(),ref.joint_velocity[frames].clone()
         if perturb:
             def ranges(mapping):
@@ -276,6 +294,9 @@ class RecoveryOnlyCommand(CommandTerm):
         if torch.any((identities<0)|(identities>1)):
             raise ValueError("Invalid forced reference identity")
         self.recovery_reference_ids[ids] = identities
+        if self._yaw_random:
+            low,high = self.cfg.recovery_reset_yaw_range
+            self.recovery_yaw[ids] = low+torch.rand(len(ids),device=self.device)*(high-low)
         self.tracking_phase[ids] = torch.randint(self.reference.num_frames,(len(ids),),device=self.device)
         self.last_direct_reset_branch[ids] = -1
         for identity,ref in enumerate(self.recovery_references):
@@ -303,7 +324,8 @@ class RecoveryOnlyCommand(CommandTerm):
             self._event(("supine_episode_resets","prone_episode_resets")[identity],len(selected))
             self.recovery_phase[selected] = frames
             self.reset_bins[identity] += torch.bincount(self.phase_bins(torch.full_like(frames,identity),frames),minlength=20)
-            self.write_reference_state(selected,ref,frames,perturb=self.cfg.reset_perturbations)
+            self.write_reference_state(selected,ref,frames,perturb=self.cfg.reset_perturbations,
+                                       yaw=self.recovery_yaw[selected] if self._yaw_random else None)
         self.forced_reference_ids[ids] = -1
         self.forced_frames[ids] = -1
         self.just_reset[ids] = True
@@ -419,6 +441,9 @@ class RecoveryOnlyCommandCfg(CommandTermCfg):
     reset_velocity_noise: dict = {"x":(-.1,.1),"y":(-.1,.1),"z":(-.05,.05),
                                   "roll":(-.1,.1),"pitch":(-.1,.1),"yaw":(-.1,.1)}
     # Symmetric uniform half-widths (rad, rad/s); defaults keep the original draws.
+    # Recovery reference (and reset state) turned about the env origin by a yaw drawn uniformly from this range at each
+    # Recovery reset, so the robot lies in any heading relative to the live dance reference. (0, 0): off, as in runs <= 23.
+    recovery_reset_yaw_range: tuple[float,float] = (0.,0.)
     reset_joint_position_noise: float = .03
     reset_joint_velocity_noise: float = .1
     floor_clearance: float = .01

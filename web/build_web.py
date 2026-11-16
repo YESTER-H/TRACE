@@ -136,7 +136,9 @@ def lie_event(kind: str, label: str) -> EventTermCfg:
 
 
 # ----------------------------------------------------------------------------------------------- heading alignment
-ALIGN_HEADING = os.environ.get("TRACE_ALIGN_HEADING", "1") != "0"
+# Run 24 learned to get up from any lying heading, so the deployment-time alignment (needed by run 23) is off
+# by default. TRACE_ALIGN_HEADING=1 turns it on.
+ALIGN_HEADING = os.environ.get("TRACE_ALIGN_HEADING", "1" if tm.POLICY == "run23" else "0") == "1"
 _HEADS = {k: tm.head_angle(tm.Motion(tm.MOTION_FILES[k]).body_quat[0, tm.ANCHOR_ID]) for k in ("supine", "prone")}
 ALIGNED_ANCHOR_ORI = mjswan.ObservationBinding(
     ts_name="TraceAlignedAnchorOri",
@@ -276,13 +278,13 @@ def _patch_scene_gui_recorder():
 
 def main():
     _patch_scene_gui_recorder()
-    policy_onnx = export_onnx(GEN / "trace_run23.onnx")
+    policy_onnx = export_onnx(GEN / f"trace_{tm.POLICY}.onnx")
     builder = mjswan.Builder(base_path=os.environ.get("MJSWAN_BASE_PATH", "/"))
     project = builder.add_project(name="TRACE")
     cfg = env_cfg()
     scene = project.add_scene_mjlab("Cyclo-TRACE-K1-Rev1", name=SCENE_NAME, env_cfg=cfg)
     policy = scene.add_policy(
-        "TRACE run 23", policy_onnx, clip_actions=tm.CLIP_ACTIONS,
+        f"TRACE {tm.POLICY.replace('run', 'run ')}", policy_onnx, clip_actions=tm.CLIP_ACTIONS,
         policy_joint_names=["robot/" + n for n in ENTITY_JOINTS],  # names in the composed scene
         default_joint_pos=[float(tm.DEFAULT_JOINT_POS[tm.JOINT_NAMES.index(n)]) for n in ENTITY_JOINTS],
         default=True,

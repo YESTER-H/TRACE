@@ -1,4 +1,4 @@
-# TRACE: Tracking and Recovery Adaptive Control with Experts for the ROBOTIS K1 Humanoid
+# TRACE: Tracking and Recovery via A Gated Composition of Experts for the ROBOTIS K1 Humanoid
 
 [English](README.md) | **한국어**
 
@@ -14,10 +14,10 @@
 
 <p align="center"><b><a href="https://yester-h.github.io/TRACE/">▶ 브라우저에서 직접 해보기</a></b>: 정책이 내 기기에서 실시간으로 돌아갑니다(MuJoCo WebAssembly + ONNX).</p>
 
-<p align="center"><i>정책 하나, 시작 상태 세 가지. 왼쪽은 엎드린 자세(Prone), 가운데는 누운 자세(Supine), 오른쪽은 선 자세에서 시작합니다.
+<p align="center"><i>정책 하나, 시작 상태 세 가지(run 23, Isaac Lab / Newton). 왼쪽은 엎드린 자세(Prone), 가운데는 누운 자세(Supine), 오른쪽은 선 자세에서 시작합니다.
 필요하면 스스로 일어난 뒤 모두 같은 춤을 이어 갑니다.</i></p>
 
-**TRACE**는 ROBOTIS **K1** 휴머노이드(23 자유도)를 위한 단일 강화학습 정책입니다. 이 정책은
+**TRACE**(**T**racking and **R**ecovery via **A** gated **C**omposition of **E**xperts, 게이트로 조합한 전문가 정책을 통한 추종과 회복)는 ROBOTIS **K1** 휴머노이드(23 자유도)를 위한 단일 강화학습 정책입니다. 이 정책은
 
 1. 댄스 모션 레퍼런스를 **따라 춤을 추고**,
 2. 넘어지면 누운 자세든 엎드린 자세든 **스스로 일어나며**,
@@ -45,10 +45,11 @@
 
 - **춤, 낙상, 기상을 정책 하나로.** Supine, Prone, 선 자세 어디서 시작해도 춤으로 이어집니다.
 - **학습 정체 구간 없음.** Supine과 Prone 회복 성공률이 모두 약 4k iteration 안에 0.95에 도달합니다.
-- **강건한 시작.** 시작 frame과 reset 노이즈를 바꾼 회복 시작 192회가 모두 성공합니다.
+- **어느 방향으로 누워도 일어남.** run 24는 학습 중 누운 방향을 무작위화합니다(yaw ±180°). 무작위 방향 시작 성공이 87/192(run 23)에서 **192/192**로 올랐고, 배포 시 보정이 필요 없습니다.
+- **덜 넘어짐.** 같은 push 테스트에서 run 23은 44번, run 24는 20번 넘어졌고, 그중 19번이 춤으로 돌아왔습니다.
 - **인터랙티브 전시 데모.** 관람객이 로봇을 밀거나 공을 던지면 로봇이 넘어졌다가 일어나 다시 춤을 춥니다.
-- **브라우저에서 실행.** [인터랙티브 웹 데모](https://yester-h.github.io/TRACE/)에서 같은 정책이 MuJoCo WebAssembly로 돌아갑니다. 어느 방향으로 눕히거나 밀어도 스스로 일어나 춤을 이어 갑니다. [`web/`](web) 참고.
-- **배포 시 방향 정렬.** 재학습 없이 push 회복을 15/44에서 45/45로 올립니다.
+- **브라우저에서 실행.** [인터랙티브 웹 데모](https://yester-h.github.io/TRACE/)에서 run 24가 MuJoCo WebAssembly로 돌아갑니다. 어느 방향으로 눕히거나 밀어도 스스로 일어나 춤을 이어 갑니다. [`web/`](web) 참고.
+- **학습 시뮬레이터 밖에서도 검증.** run 23은 MuJoCo의 37개 조건(솔버, 마찰, 질량, 게인, 지연 20 ms 이하) sim2sim 스윕을 통과했습니다. [`sim2sim/`](sim2sim) 참고.
 
 ## 방법
 
@@ -72,6 +73,7 @@
 | **적응형 reset 샘플러** | 20개 phase bin에 대해 균일 샘플링과 적응형 샘플링을 50:50으로 섞습니다. 실패가 나면 실패 지점 이전 최대 2초의 bin도 0.8^s 가중치로 함께 올립니다(BeyondMimic look-ahead). |
 | **종료 조건** | 정규화된 오차가 4를 넘는 상태가 2초 지속되면 종료합니다. 마지막 frame에서는 1초 유예가 있습니다. Tracking은 낙상·이탈 기준을 씁니다. |
 | **기상 레퍼런스 trim** | 움직임이 없는 앞부분을 잘랐습니다(Supine 100 frame, Prone 80 frame). 이제 두 기상 동작 모두 약 0.56초에 움직이기 시작합니다. |
+| **누운 방향 무작위화** (run 24) | Recovery reset에서 기상 레퍼런스와 로봇을 [−π, π) 범위의 yaw만큼 함께 돌립니다. 댄스 레퍼런스는 돌리지 않으므로, 일어난 뒤 춤 방향으로 스스로 돌아서야 합니다. |
 | **PPO** | RSL-RL 5. observation normalization, scalar std, entropy 0.005, 환경 4096개, seed 42. |
 
 observation 구성, 보상 커널, 샘플러, 로그 정의는
@@ -79,30 +81,47 @@ observation 구성, 보상 커널, 샘플러, 로그 정의는
 
 ## 결과
 
-최종 정책은 **run 23**(`Cyclo-TRACE-K1-Rev1-Integrated-Gated-ProneTrim`, iteration 40,600)입니다.
-[`checkpoints/run23_gated_prone_trim/`](checkpoints/run23_gated_prone_trim)에 포함되어 있습니다.
+최종 정책은 **run 24**(`Cyclo-TRACE-K1-Rev1-Integrated-Gated-ProneTrim-YawRand`, iteration 29,999)입니다
+([`checkpoints/run24_gated_prone_trim_yawrand/`](checkpoints/run24_gated_prone_trim_yawrand)).
+run 23([`checkpoints/run23_gated_prone_trim/`](checkpoints/run23_gated_prone_trim), iteration 40,600)에
+Recovery reset의 누운 방향 무작위화만 추가했고, 나머지는 모두 같습니다.
 
-| 지표 | Supine | Prone |
+| 지표 | run 23 | **run 24** |
 |---|---|---|
-| 회복 성공률 (학습 종료 시점) | 0.997 | 0.999 |
-| 성공률이 처음 0.95에 도달한 iteration | ~2.1k | ~4.0k |
-| frame-0 결정론적 평가: Tracking 시작 step | 261 (5.2초) | 338 (6.8초) |
-| 섭동을 준 고정 시작점 회복 (두 동작 합계) | 192 / 192 | |
+| 학습 종료 시 회복 성공률 (Supine / Prone) | 0.997 / 0.999 | 0.997 / 0.998 |
+| 성공률이 처음 0.95에 도달한 iteration (Supine / Prone) | ~2.1k / ~4.0k | ~1.3k / ~3.6k |
+| frame-0 평가: Tracking 시작 step (Supine / Prone) | 261 / 338 | 261 / 328 |
+| 섭동을 준 고정 시작점, 학습 방향 | 192 / 192 | 192 / 192 |
+| 섭동을 준 고정 시작점, **무작위 누운 방향** | 87 / 192 | **192 / 192** |
+| Transition action-rate P95 (Supine / Prone, 낮을수록 부드러움) | 40.4 / 51.6 | 32.2 / 35.8 |
+| 정렬 없는 push 테스트 (넘어짐 → 춤 복귀) | 44 → 15 | **20 → 19** |
+| 10 kg 공 10 m/s, 정렬 없음 (넘어짐 → 복귀) | 27 → 10 | 14 → 13 |
 
+<p align="center">
+  <img src="assets/run24_eval_compare.png" width="90%" alt="run 23과 run 24 비교: 무작위 방향 시작, 전환 부드러움, push와 공 테스트">
+</p>
+
+**방향 무작위화의 두 가지 효과.** run 23은 학습 중 한 가지 누운 방향만 경험했습니다(reset yaw 노이즈 ±0.05 rad).
+그래서 90° 이상 돌아간 채 쓰러지면 거의 일어나지 못했고, 전시 스크립트에서는 배포 시 보정으로 해결했습니다.
+로봇이 가만히 누우면 댄스 레퍼런스를 로봇의 방향으로 돌리는 방식입니다(`trace_heading_alignment.py`, push 테스트 15/44 → 45/45).
+run 24는 이것을 학습으로 해결합니다. 게다가 덜 넘어집니다(아래 왼쪽, 5k 이후 모든 체크포인트).
+Tracking expert만 강제로 써도 같은 차이(48번 대 22번)가 나므로, 늘어난 강건성은 Tracking expert에 있습니다.
+run 24의 Tracking은 일어난 직후 최대 180°의 방향 오차를 안고 시작하므로 그것이 섭동 학습 역할을 했을 것으로 보입니다(검증되지 않은 가설).
+
+<p align="center">
+  <img src="assets/run24_push_robustness.png" width="90%" alt="체크포인트별 push 낙상과 expert 고정 실험, run 23 대 run 24">
+</p>
+
+<details>
+<summary>run 23 학습 곡선과 누운 방향 민감도</summary>
 <p align="center">
   <img src="assets/run23_recovery_success.png" width="48%" alt="run 23 학습 중 회복 성공률">
   <img src="assets/run23_tracking_failure.png" width="48%" alt="run 23 학습 중 Tracking 실패율">
 </p>
-
-**Push 회복과 누운 방향.** Recovery expert는 학습 중 한 가지 누운 방향만 경험했습니다(reset yaw 노이즈 ±0.05 rad).
-그래서 90° 이상 돌아간 채 쓰러지면 거의 일어나지 못합니다(아래 그림).
-`trace_heading_alignment.py`는 로봇이 0.3초 동안 가만히 누워 있으면 댄스 레퍼런스를 z축으로 돌려
-누운 방향에 맞춥니다. 이것만으로 8방향 × 3단계 push 테스트에서 춤으로 돌아온 낙상이
-**15/44에서 45/45**로 늘었습니다.
-
 <p align="center">
-  <img src="assets/heading_success_no_alignment.png" width="60%" alt="방향 정렬 없이 누운 방향별 회복 성공률">
+  <img src="assets/heading_success_no_alignment.png" width="60%" alt="run 23, 방향 정렬 없이 누운 방향별 회복 성공률">
 </p>
+</details>
 
 ## 설치
 
@@ -136,27 +155,30 @@ git clone https://github.com/YESTER-H/TRACE.git
 
 모든 명령은 cyclo_lab 컨테이너 안의 `/workspace/cyclo_lab`에서 실행합니다.
 
-**학습** (최종 설정, scratch):
+**학습** (최종 설정 run 24, scratch):
 
 ```bash
 /isaac-sim/python.sh scripts/reinforcement_learning/rsl_rl/train.py \
-    --task Cyclo-TRACE-K1-Rev1-Integrated-Gated-ProneTrim --headless \
-    --num_envs 4096 --max_iterations 50000
+    --task Cyclo-TRACE-K1-Rev1-Integrated-Gated-ProneTrim-YawRand --headless \
+    --num_envs 4096 --seed 42 --max_iterations 30000
 ```
+
+`--num_envs 4096`을 꼭 명시하세요. 태스크 기본값은 64입니다. 제대로 실행되면 RTX 4060 Laptop에서
+iteration당 약 2.7초가 걸립니다(30k iteration ≈ 23시간).
 
 **재생** (사전 학습 체크포인트):
 
 ```bash
-CKPT=/path/to/TRACE/checkpoints/run23_gated_prone_trim/model_40600.pt
+CKPT=/path/to/TRACE/checkpoints/run24_gated_prone_trim_yawrand/model_29999.pt
 /isaac-sim/python.sh scripts/reinforcement_learning/rsl_rl/play.py \
-    --task Cyclo-TRACE-K1-Rev1-Integrated-Gated-ProneTrim-Play \
+    --task Cyclo-TRACE-K1-Rev1-Integrated-Gated-ProneTrim-YawRand-Play \
     --num_envs 3 --checkpoint $CKPT --skip-export
 ```
 
 **평가.** 각 스크립트는 `--output-dir`에 CSV와 JSON을 저장합니다.
 
 ```bash
-TASK=Cyclo-TRACE-K1-Rev1-Integrated-Gated-ProneTrim-Play
+TASK=Cyclo-TRACE-K1-Rev1-Integrated-Gated-ProneTrim-YawRand-Play
 # 선 자세 / Supine / Prone을 frame 0에서 나란히 시작 (위 GIF), reset 없음
 /isaac-sim/python.sh scripts/reinforcement_learning/rsl_rl/evaluate_trace_integrated_three_views.py \
     --eval-task $TASK --loop --no-resets --output-dir logs/eval/three_views --checkpoint $CKPT
@@ -167,9 +189,15 @@ TASK=Cyclo-TRACE-K1-Rev1-Integrated-Gated-ProneTrim-Play
 # Transition과 후반 Tracking의 action-rate 부드러움 비교
 /isaac-sim/python.sh scripts/reinforcement_learning/rsl_rl/diagnose_trace_transition_smoothness.py --headless \
     --eval-task $TASK --supine-frames 0 --prone-frames 0 --output-dir logs/eval/smoothness --checkpoint $CKPT
-# 8방향 × 3단계 속도 push, 방향 정렬 사용
+# 8방향 × 3단계 속도 push (run 23은 --align-heading 추가)
 /isaac-sim/python.sh scripts/reinforcement_learning/rsl_rl/diagnose_trace_push_recovery.py --headless \
-    --align-heading --output-dir logs/eval/push --checkpoint $CKPT
+    --eval-task $TASK --output-dir logs/eval/push --checkpoint $CKPT
+# 체크포인트별 push 낙상, Tracking 또는 Recovery expert 고정
+/isaac-sim/python.sh scripts/reinforcement_learning/rsl_rl/diagnose_trace_push_robustness.py --headless \
+    --eval-task $TASK --gate native --output-dir logs/eval/push_robustness --checkpoint $CKPT
+# 몸통에 공 던지기 (0.45 / 3 / 10 kg, 10 m/s)
+/isaac-sim/python.sh scripts/reinforcement_learning/rsl_rl/diagnose_trace_ball_recovery.py --headless \
+    --eval-task $TASK --output-dir logs/eval/balls --checkpoint $CKPT
 ```
 
 전체 옵션은 각 스크립트의 docstring(`--help`)에 있습니다.
@@ -178,7 +206,7 @@ TASK=Cyclo-TRACE-K1-Rev1-Integrated-Gated-ProneTrim-Play
 
 ```bash
 /isaac-sim/python.sh scripts/reinforcement_learning/rsl_rl/exhibition_trace_push.py \
-    --eval-task Cyclo-TRACE-K1-Rev1-Integrated-Gated-ProneTrim-Play \
+    --eval-task Cyclo-TRACE-K1-Rev1-Integrated-Gated-ProneTrim-YawRand-Play \
     --output-dir logs/eval/exhibition_$(date +%H%M%S) --checkpoint $CKPT
 ```
 
@@ -186,10 +214,10 @@ TASK=Cyclo-TRACE-K1-Rev1-Integrated-Gated-ProneTrim-Play
 |---|---|
 | `I` `K` `J` `L` / `P` | 화면 기준 뒤 / 앞 / 왼쪽 / 오른쪽 / 무작위 방향으로 밀기 |
 | `1` `2` `3` | 세기: 약 / 중 / 강 |
-| `B` | push 모드와 공 모드 전환 (0.45 kg, 3 kg, 10 kg 공을 몸통에 던짐) |
+| `B` | 공 모드(기본값, 0.45 kg, 3 kg, 10 kg 공을 몸통에 던짐)와 push 모드 전환 |
 | 오른쪽 클릭 드래그 | 마우스로 몸체 잡아당기기 |
 | `R` | 춤 시작 자세로 reset |
-| `C` / `G` | 카메라 따라가기 / 방향 정렬 켜기·끄기 |
+| `C` / `G` | 카메라 따라가기 / 방향 정렬 켜기·끄기 (기본값 꺼짐, run 23에서는 켜기) |
 
 `--record`를 붙이면 3D 화면을 `session.mp4`로 저장합니다. 이벤트는 `events.csv`와 `summary.json`에 기록됩니다.
 
@@ -197,7 +225,8 @@ TASK=Cyclo-TRACE-K1-Rev1-Integrated-Gated-ProneTrim-Play
 
 | 태스크 | 설명 |
 |---|---|
-| `Cyclo-TRACE-K1-Rev1-Integrated-Gated-ProneTrim` (`-Play`) | **최종**: gate, look-ahead 샘플러, Supine trim100, Prone trim80 |
+| `Cyclo-TRACE-K1-Rev1-Integrated-Gated-ProneTrim-YawRand` (`-Play`) | **최종 (run 24)**: run 23 + Recovery reset yaw를 [−π, π)에서 균일 추출 |
+| `Cyclo-TRACE-K1-Rev1-Integrated-Gated-ProneTrim` (`-Play`) | run 23: gate, look-ahead 샘플러, Supine trim100, Prone trim80 |
 | `Cyclo-TRACE-K1-Rev1-Integrated-Gated-Lookahead` | run 22: 최종 구조, Prone은 trim 전 레퍼런스 |
 | `Cyclo-TRACE-K1-Rev1-Integrated-Gated` (`-Play`) | run 21: look-ahead 없는 학습된 gate |
 | `Cyclo-TRACE-K1-Rev1-Integrated-U15` / `-U15-Balanced` (`-Play`) | oracle router (StableMimic U1.5 이식) |
@@ -230,15 +259,18 @@ TRACE/
 │   └── scripts/
 │       ├── reinforcement_learning/rsl_rl/   # evaluate_*, diagnose_*, smoke_*, 전시
 │       └── tools/motion/                    # trim_reference_motion.py, replay_npz_stepped.py
-├── checkpoints/run23_gated_prone_trim/      # model_40600.pt + params/{agent,env}.yaml
-├── web/                            # 브라우저 데모 (mjswan): sim2sim 검증, ONNX export, Pages 빌드
+├── checkpoints/
+│   ├── run24_gated_prone_trim_yawrand/      # 최종: model_29999.pt + params/{agent,env}.yaml
+│   └── run23_gated_prone_trim/              # model_40600.pt + params
+├── web/                            # 브라우저 데모 (mjswan): MuJoCo 이식, ONNX export, Pages 빌드
+├── sim2sim/                        # MuJoCo 네이티브 뷰어와 엄격한 sim2sim 스윕
 ├── assets/                         # README용 GIF와 그래프
-└── docs/experiments.md             # 전체 실험 이력 (23 run, 영문)
+└── docs/experiments.md             # 전체 실험 이력 (24 run, 영문)
 ```
 
 ## 실험 이력
 
-PhysX와 Newton에서 총 23번 학습한 끝에 지금의 구조에 도달했습니다. 요약하면 다음과 같습니다.
+PhysX와 Newton에서 총 24번 학습한 끝에 지금의 구조에 도달했습니다. 요약하면 다음과 같습니다.
 
 | 단계 | 변경 | 결과 |
 |---|---|---|
@@ -249,14 +281,14 @@ PhysX와 Newton에서 총 23번 학습한 끝에 지금의 구조에 도달했�
 | StableMimic 설정 | observation normalization, reset 섭동, 성공 보상 | Prone 0.999 |
 | 통합 + 학습된 gate | oracle을 gate로 교체, Supine trim, 조기 직립 | 긴 무작위 정체 (Prone은 ~49k에 도약) |
 | + 2초 실패 look-ahead | BeyondMimic 커널, 50:50 샘플링 | 둘 다 0.99, frame-0에서 회복 후 춤으로 복귀, 192/192 |
-| **+ Prone trim (최종)** | 기상 시작 시점 맞춤 | **정체 없음, Prone이 3.4초 더 빨리 Tracking에 진입** |
+| + Prone trim (run 23) | 기상 시작 시점 맞춤 | 정체 없음, Prone이 3.4초 더 빨리 Tracking에 진입 |
+| **+ 누운 방향 무작위화 (run 24, 최종)** | Recovery reset yaw ±180° | **어느 방향이든 192/192, push 낙상 감소 (44 → 20)** |
 
 각 단계의 세부 내용, 그래프, 판단 근거는 [docs/experiments.md](docs/experiments.md)(영문)에 있습니다.
 
 ## 한계
 
-- **학습한 누운 방향이 하나뿐입니다.** 배포 시 방향 정렬로 보완했습니다. 근본적인 해결책은 Recovery reset에서 yaw를 무작위화하는 것입니다.
-- **시뮬레이션에서만 검증했습니다.** sim-to-real은 시도하지 않았습니다. 입력이 두 개인 gated actor의 JIT/ONNX export는 구현되어 있지 않습니다.
+- **시뮬레이션에서만 검증했습니다.** sim-to-real은 시도하지 않았습니다. MuJoCo 스윕에서는 구동 지연이 가장 큰 위험으로 나타났습니다. run 23은 20 ms 지연까지는 버티지만 40 ms에서는 무너집니다. 학습에서는 마찰, 질량, 게인, 지연을 무작위화하지 않았습니다. Isaac Lab에서 입력 두 개짜리 gated actor를 JIT/ONNX로 export하는 기능은 없고, 웹 데모는 입력 하나짜리 그래프를 따로 export합니다.
 - **춤이 하나뿐입니다.** Tracking 레퍼런스는 cyclo_lab의 6초짜리 `dance1` 클립입니다. 여러 춤을 오가려면 multi-motion Tracking 라이브러리가 필요합니다.
 - **seed 하나로만 학습했습니다.** 모든 run은 seed 42로 한 번씩만 학습했습니다. 비슷한 설정에서도 정체가 풀리는 시점의 편차가 컸습니다.
 

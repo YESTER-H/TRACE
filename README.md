@@ -1,4 +1,4 @@
-# TRACE: Tracking and Recovery Adaptive Control with Experts for the ROBOTIS K1 Humanoid
+# TRACE: Tracking and Recovery via A Gated Composition of Experts for the ROBOTIS K1 Humanoid
 
 **English** | [한국어](README.ko.md)
 
@@ -14,10 +14,10 @@
 
 <p align="center"><b><a href="https://yester-h.github.io/TRACE/">▶ Try it in your browser</a></b>: the policy runs live on your device (MuJoCo WebAssembly + ONNX).</p>
 
-<p align="center"><i>One policy, three starts. Left: lying face down (Prone). Middle: lying face up (Supine). Right: standing.
+<p align="center"><i>One policy, three starts (run 23, Isaac Lab / Newton). Left: lying face down (Prone). Middle: lying face up (Supine). Right: standing.
 All three get up when needed and then follow the same dance.</i></p>
 
-**TRACE** is a single reinforcement-learning policy for the ROBOTIS **K1** humanoid (23 DoF) that
+**TRACE** (**T**racking and **R**ecovery via **A** gated **C**omposition of **E**xperts) is a single reinforcement-learning policy for the ROBOTIS **K1** humanoid (23 DoF) that
 
 1. **tracks a dance** motion reference,
 2. **gets up by itself** after it falls, either face up or face down, and
@@ -46,10 +46,11 @@ Training is done in Isaac Lab with the **Newton** physics backend.
 
 - **One policy for dancing, falling and getting up.** Starts from Supine, Prone and standing all end in the dance.
 - **No plateau in training.** Supine and Prone recovery both reach 0.95 success by about 4k iterations.
-- **Robust starts.** 192 of 192 perturbed recovery starts succeed, at different frames and with reset noise.
+- **Gets up in any heading.** Run 24 randomizes the lying heading in training (yaw ±180°). Random-heading starts go from 87/192 (run 23) to **192/192**, with no deployment-time correction.
+- **Harder to knock over.** In the same push test, run 24 falls 20 times where run 23 falls 44 times, and 19 of the 20 come back to the dance.
 - **Interactive exhibition demo.** Visitors push the robot or throw balls at it. It falls, gets up and keeps dancing.
-- **Runs in the browser.** An [interactive web demo](https://yester-h.github.io/TRACE/) runs the same policy in MuJoCo WebAssembly. Knock it down or shove it from any direction, and it gets up and dances on. See [`web/`](web).
-- **Heading alignment at deployment.** No retraining is needed. It raises push recovery from 15/44 to 45/45.
+- **Runs in the browser.** An [interactive web demo](https://yester-h.github.io/TRACE/) runs run 24 in MuJoCo WebAssembly. Knock it down or shove it from any direction, and it gets up and dances on. See [`web/`](web).
+- **Checked outside the training simulator.** Run 23 passes a 37-condition MuJoCo sim-to-sim sweep (solver, friction, mass, gains, delay ≤ 20 ms). See [`sim2sim/`](sim2sim).
 
 ## Method
 
@@ -73,6 +74,7 @@ Training is done in Isaac Lab with the **Newton** physics backend.
 | **Adaptive reset sampler** | Uniform and adaptive sampling are mixed 50:50 over 20 phase bins. Failures also raise the bins up to 2 s before the failure, with weight 0.8^s (the BeyondMimic look-ahead). |
 | **Termination** | A persistent-error rule ends the episode when the normalized error stays > 4 for 2 s. A 1 s grace period applies at the final frame. Tracking uses fall and deviation limits. |
 | **Trimmed get-up references** | The still lead-ins are removed: 100 frames from Supine and 80 frames from Prone. Both get-ups now start moving at about 0.56 s. |
+| **Heading randomization** (run 24) | Recovery resets turn the get-up reference and the robot by a yaw drawn from [−π, π). The dance reference is not turned, so after standing up the robot must turn to the dance heading itself. |
 | **PPO** | RSL-RL 5. Observations are normalized, std is scalar, entropy is 0.005. 4096 environments, seed 42. |
 
 See [`overlay/.../trace_recovery/README.md`](overlay/source/cyclo_lab/cyclo_lab/manager_based/trace_recovery/README.md)
@@ -80,30 +82,49 @@ for the exact observation layout, reward kernels, sampler and logging definition
 
 ## Results
 
-The final policy is **run 23**, `Cyclo-TRACE-K1-Rev1-Integrated-Gated-ProneTrim`, at iteration 40,600.
-It is included in [`checkpoints/run23_gated_prone_trim/`](checkpoints/run23_gated_prone_trim).
+The final policy is **run 24**, `Cyclo-TRACE-K1-Rev1-Integrated-Gated-ProneTrim-YawRand`, at iteration 29,999
+([`checkpoints/run24_gated_prone_trim_yawrand/`](checkpoints/run24_gated_prone_trim_yawrand)).
+It is run 23 ([`checkpoints/run23_gated_prone_trim/`](checkpoints/run23_gated_prone_trim), iteration 40,600)
+plus heading randomization of the Recovery resets. Everything else is the same.
 
-| Metric | Supine | Prone |
+| Metric | Run 23 | **Run 24** |
 |---|---|---|
-| Recovery success (training, end) | 0.997 | 0.999 |
-| Iteration where success first reaches 0.95 | ~2.1k | ~4.0k |
-| Frame-0 deterministic eval: step where Tracking starts | 261 (5.2 s) | 338 (6.8 s) |
-| Perturbed fixed starts recovered (both motions) | 192 / 192 | |
+| Recovery success at the end of training (Supine / Prone) | 0.997 / 0.999 | 0.997 / 0.998 |
+| Iteration where success first reaches 0.95 (Supine / Prone) | ~2.1k / ~4.0k | ~1.3k / ~3.6k |
+| Frame-0 eval: step where Tracking starts (Supine / Prone) | 261 / 338 | 261 / 328 |
+| Perturbed fixed starts, trained heading | 192 / 192 | 192 / 192 |
+| Perturbed fixed starts, **random lying heading** | 87 / 192 | **192 / 192** |
+| Transition action-rate P95 (Supine / Prone; lower is smoother) | 40.4 / 51.6 | 32.2 / 35.8 |
+| Push test without alignment (falls → back to the dance) | 44 → 15 | **20 → 19** |
+| 10 kg ball at 10 m/s, without alignment (falls → back) | 27 → 10 | 14 → 13 |
 
+<p align="center">
+  <img src="assets/run24_eval_compare.png" width="90%" alt="Run 23 vs run 24: random-heading starts, transition smoothness, push and ball tests">
+</p>
+
+**Why heading randomization helps twice.** Run 23 saw only one lying heading in training (reset yaw noise
+±0.05 rad). A robot that lands rotated by 90° or more almost never gets up, so the exhibition script needed a
+deployment-time fix: once the robot lies still, it turns the dance reference to the robot's heading
+(`trace_heading_alignment.py`, 15/44 → 45/45 in the push test). Run 24 learns this instead. It also falls less
+often (left below, at every checkpoint from 5k on). Forcing the Tracking expert alone gives the same gap
+(48 vs 22 falls), so the extra robustness lives in the Tracking expert. A likely reason, not verified, is that
+run 24's Tracking starts after standing up with a heading error of up to 180°, which acts as perturbation
+training.
+
+<p align="center">
+  <img src="assets/run24_push_robustness.png" width="90%" alt="Push falls per checkpoint and with forced experts, run 23 vs run 24">
+</p>
+
+<details>
+<summary>Run 23 training curves and heading sensitivity</summary>
 <p align="center">
   <img src="assets/run23_recovery_success.png" width="48%" alt="Recovery success over training, run 23">
   <img src="assets/run23_tracking_failure.png" width="48%" alt="Tracking failure over training, run 23">
 </p>
-
-**Push recovery and heading.** The Recovery expert saw only one lying heading in training (reset yaw noise ±0.05 rad).
-A robot that lands rotated by 90° or more almost never gets up (left figure below).
-`trace_heading_alignment.py` waits until the robot lies still for 0.3 s. It then rotates the dance reference
-about z to match the lying heading. With this, push tests over 8 directions and 3 strengths go from
-**15/44 to 45/45** falls recovered back into the dance.
-
 <p align="center">
-  <img src="assets/heading_success_no_alignment.png" width="60%" alt="Recovery success by lying heading without alignment">
+  <img src="assets/heading_success_no_alignment.png" width="60%" alt="Run 23 recovery success by lying heading without alignment">
 </p>
+</details>
 
 ## Installation
 
@@ -137,27 +158,30 @@ The tasks register themselves when `cyclo_lab` is imported.
 
 Run everything inside the cyclo_lab container, from `/workspace/cyclo_lab`.
 
-**Train** the final configuration from scratch:
+**Train** the final configuration (run 24) from scratch:
 
 ```bash
 /isaac-sim/python.sh scripts/reinforcement_learning/rsl_rl/train.py \
-    --task Cyclo-TRACE-K1-Rev1-Integrated-Gated-ProneTrim --headless \
-    --num_envs 4096 --max_iterations 50000
+    --task Cyclo-TRACE-K1-Rev1-Integrated-Gated-ProneTrim-YawRand --headless \
+    --num_envs 4096 --seed 42 --max_iterations 30000
 ```
+
+Pass `--num_envs 4096` explicitly: the task default is 64. A correct run takes about 2.7 s per iteration on an
+RTX 4060 Laptop (30k iterations ≈ 23 h).
 
 **Play** the pretrained checkpoint:
 
 ```bash
-CKPT=/path/to/TRACE/checkpoints/run23_gated_prone_trim/model_40600.pt
+CKPT=/path/to/TRACE/checkpoints/run24_gated_prone_trim_yawrand/model_29999.pt
 /isaac-sim/python.sh scripts/reinforcement_learning/rsl_rl/play.py \
-    --task Cyclo-TRACE-K1-Rev1-Integrated-Gated-ProneTrim-Play \
+    --task Cyclo-TRACE-K1-Rev1-Integrated-Gated-ProneTrim-YawRand-Play \
     --num_envs 3 --checkpoint $CKPT --skip-export
 ```
 
 **Evaluate.** Use these scripts; each one writes CSV and JSON to `--output-dir`:
 
 ```bash
-TASK=Cyclo-TRACE-K1-Rev1-Integrated-Gated-ProneTrim-Play
+TASK=Cyclo-TRACE-K1-Rev1-Integrated-Gated-ProneTrim-YawRand-Play
 # Standing / Supine / Prone from frame 0, side by side (the teaser above), no resets
 /isaac-sim/python.sh scripts/reinforcement_learning/rsl_rl/evaluate_trace_integrated_three_views.py \
     --eval-task $TASK --loop --no-resets --output-dir logs/eval/three_views --checkpoint $CKPT
@@ -168,9 +192,15 @@ TASK=Cyclo-TRACE-K1-Rev1-Integrated-Gated-ProneTrim-Play
 # Action-rate smoothness of Transition vs. late Tracking
 /isaac-sim/python.sh scripts/reinforcement_learning/rsl_rl/diagnose_trace_transition_smoothness.py --headless \
     --eval-task $TASK --supine-frames 0 --prone-frames 0 --output-dir logs/eval/smoothness --checkpoint $CKPT
-# Pushes in 8 directions x 3 speeds, with heading alignment
+# Pushes in 8 directions x 3 speeds (add --align-heading for run 23)
 /isaac-sim/python.sh scripts/reinforcement_learning/rsl_rl/diagnose_trace_push_recovery.py --headless \
-    --align-heading --output-dir logs/eval/push --checkpoint $CKPT
+    --eval-task $TASK --output-dir logs/eval/push --checkpoint $CKPT
+# Push falls per checkpoint, and with the Tracking or Recovery expert forced
+/isaac-sim/python.sh scripts/reinforcement_learning/rsl_rl/diagnose_trace_push_robustness.py --headless \
+    --eval-task $TASK --gate native --output-dir logs/eval/push_robustness --checkpoint $CKPT
+# Balls (0.45 / 3 / 10 kg at 10 m/s) thrown at the torso
+/isaac-sim/python.sh scripts/reinforcement_learning/rsl_rl/diagnose_trace_ball_recovery.py --headless \
+    --eval-task $TASK --output-dir logs/eval/balls --checkpoint $CKPT
 ```
 
 Each script lists its full options in its docstring (`--help`).
@@ -179,7 +209,7 @@ Each script lists its full options in its docstring (`--help`).
 
 ```bash
 /isaac-sim/python.sh scripts/reinforcement_learning/rsl_rl/exhibition_trace_push.py \
-    --eval-task Cyclo-TRACE-K1-Rev1-Integrated-Gated-ProneTrim-Play \
+    --eval-task Cyclo-TRACE-K1-Rev1-Integrated-Gated-ProneTrim-YawRand-Play \
     --output-dir logs/eval/exhibition_$(date +%H%M%S) --checkpoint $CKPT
 ```
 
@@ -187,10 +217,10 @@ Each script lists its full options in its docstring (`--help`).
 |---|---|
 | `I` `K` `J` `L` / `P` | push away / toward / left / right / random direction |
 | `1` `2` `3` | strength: light / medium / strong |
-| `B` | switch between push mode and ball mode (0.45 kg, 3 kg or 10 kg ball thrown at the torso) |
+| `B` | switch between ball mode (the default; 0.45 kg, 3 kg or 10 kg ball thrown at the torso) and push mode |
 | right-click drag | pull a body with the mouse |
 | `R` | reset to the dance start |
-| `C` / `G` | camera follow / heading alignment on or off |
+| `C` / `G` | camera follow / heading alignment on or off (off by default; turn it on for run 23) |
 
 Add `--record` to save the 3D view to `session.mp4`. Events go to `events.csv` and `summary.json`.
 
@@ -198,7 +228,8 @@ Add `--record` to save the 3D view to `session.mp4`. Events go to `events.csv` a
 
 | Task | Description |
 |---|---|
-| `Cyclo-TRACE-K1-Rev1-Integrated-Gated-ProneTrim` (`-Play`) | **Final**: gate, look-ahead sampler, Supine trim100 and Prone trim80 |
+| `Cyclo-TRACE-K1-Rev1-Integrated-Gated-ProneTrim-YawRand` (`-Play`) | **Final (run 24)**: run 23 + Recovery reset yaw uniform in [−π, π) |
+| `Cyclo-TRACE-K1-Rev1-Integrated-Gated-ProneTrim` (`-Play`) | Run 23: gate, look-ahead sampler, Supine trim100 and Prone trim80 |
 | `Cyclo-TRACE-K1-Rev1-Integrated-Gated-Lookahead` | Run 22: final structure with the untrimmed Prone reference |
 | `Cyclo-TRACE-K1-Rev1-Integrated-Gated` (`-Play`) | Run 21: learned gate without look-ahead |
 | `Cyclo-TRACE-K1-Rev1-Integrated-U15` / `-U15-Balanced` (`-Play`) | Oracle router (StableMimic U1.5 port) |
@@ -231,15 +262,18 @@ TRACE/
 │   └── scripts/
 │       ├── reinforcement_learning/rsl_rl/   # evaluate_*, diagnose_*, smoke_*, exhibition
 │       └── tools/motion/                    # trim_reference_motion.py, replay_npz_stepped.py
-├── checkpoints/run23_gated_prone_trim/      # model_40600.pt + params/{agent,env}.yaml
-├── web/                            # browser demo (mjswan): sim-to-sim check, ONNX export, Pages build
+├── checkpoints/
+│   ├── run24_gated_prone_trim_yawrand/      # final: model_29999.pt + params/{agent,env}.yaml
+│   └── run23_gated_prone_trim/              # model_40600.pt + params
+├── web/                            # browser demo (mjswan): MuJoCo port, ONNX export, Pages build
+├── sim2sim/                        # native MuJoCo viewer and the strict sim-to-sim sweep
 ├── assets/                         # GIF and figures for this README
-└── docs/experiments.md             # the full run history (23 runs)
+└── docs/experiments.md             # the full run history (24 runs)
 ```
 
 ## Experiment history
 
-Getting here took 23 training runs on PhysX and Newton. The short version:
+Getting here took 24 training runs on PhysX and Newton. The short version:
 
 | Stage | Change | Outcome |
 |---|---|---|
@@ -250,14 +284,14 @@ Getting here took 23 training runs on PhysX and Newton. The short version:
 | StableMimic settings | Observation normalization, reset perturbation, success bonus | Prone 0.999 |
 | Integrated + learned gate | Gate replaces oracle; Supine trim; early upright | Long random plateaus (Prone jump at ~49k) |
 | + 2 s failure look-ahead | BeyondMimic kernel; 50:50 sampling | Both 0.99; frame-0 recover → dance; 192/192 |
-| **+ Prone trim (final)** | Matched get-up onset | **No plateau; Prone reaches Tracking 3.4 s earlier** |
+| + Prone trim (run 23) | Matched get-up onset | No plateau; Prone reaches Tracking 3.4 s earlier |
+| **+ Heading randomization (run 24, final)** | Recovery reset yaw ±180° | **Any lying heading 192/192; fewer push falls (44 → 20)** |
 
 Details, figures and the reasoning behind each step are in [docs/experiments.md](docs/experiments.md).
 
 ## Limitations
 
-- **One lying heading in training.** Heading alignment fixes this at deployment. The proper fix is yaw-randomized Recovery resets.
-- **Simulation only.** No sim-to-real transfer was attempted. JIT/ONNX export of the two-input gated actor is not implemented.
+- **Simulation only.** No sim-to-real transfer was attempted. The MuJoCo sweep points to actuation latency as the main risk: run 23 holds up to 20 ms of delay but not 40 ms. Training randomized no friction, mass, gains or latency. JIT/ONNX export from Isaac Lab of the two-input gated actor is not implemented; the web demo exports its own single-input graph.
 - **One dance.** The Tracking reference is the 6 s `dance1` clip from cyclo_lab. A multi-motion Tracking library would be needed to switch between dances.
 - **One seed.** Every run used seed 42 once. The iteration at which a plateau breaks varied a lot between similar runs.
 

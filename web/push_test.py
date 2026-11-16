@@ -19,7 +19,7 @@ parser.add_argument("--speeds", default="1.8,2.4,3.0")
 parser.add_argument("--directions", type=int, default=8)
 parser.add_argument("--push-times", default="2.0,3.7")
 parser.add_argument("--seconds", type=float, default=25.)
-parser.add_argument("--workers", type=int, default=8)
+parser.add_argument("--workers", type=int, default=6)
 args = parser.parse_args()
 
 
@@ -54,7 +54,8 @@ if __name__ == "__main__":
     speeds = [float(s) for s in args.speeds.split(",")]
     times = [float(t) for t in args.push_times.split(",")]
     cases = [(d, s, t, a) for a in (False, True) for d in range(args.directions) for s in speeds for t in times]
-    with ProcessPoolExecutor(args.workers) as pool:
+    # One case per worker process: MuJoCo models built per case are not reliably freed (RAM grows).
+    with ProcessPoolExecutor(args.workers, max_tasks_per_child=1) as pool:
         rows = list(pool.map(run, cases))
     for align in (False, True):
         r = [x for x in rows if x["align"] == align]

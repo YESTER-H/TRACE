@@ -99,3 +99,15 @@ gym.register(
     kwargs={"env_cfg_entry_point":__name__+".env_cfg:TraceIntegratedGatedProneTrimPlayEnvCfg",
             "rsl_rl_cfg_entry_point":__name__+".runner_cfg:TraceIntegratedGatedProneTrimRunnerCfg"},
 )
+gym.register(
+    id="Cyclo-TRACE-K1-Rev1-Integrated-Gated-ProneTrim-YawRand",
+    entry_point=__name__+".environment:TraceIntegratedEnv",disable_env_checker=True,
+    kwargs={"env_cfg_entry_point":__name__+".env_cfg:TraceIntegratedGatedProneTrimYawRandEnvCfg",
+            "rsl_rl_cfg_entry_point":__name__+".runner_cfg:TraceIntegratedGatedProneTrimYawRandRunnerCfg"},
+)
+gym.register(
+    id="Cyclo-TRACE-K1-Rev1-Integrated-Gated-ProneTrim-YawRand-Play",
+    entry_point=__name__+".environment:TraceIntegratedEnv",disable_env_checker=True,
+    kwargs={"env_cfg_entry_point":__name__+".env_cfg:TraceIntegratedGatedProneTrimYawRandPlayEnvCfg",
+            "rsl_rl_cfg_entry_point":__name__+".runner_cfg:TraceIntegratedGatedProneTrimYawRandRunnerCfg"},
+)

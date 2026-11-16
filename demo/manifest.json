@@ -84,7 +84,7 @@
           },
           "mdps": [
             {
-              "id": "trace_run_23",
+              "id": "trace_run_24",
               "commands": {
                 "motion": {
                   "name": "TrackingCommand",
@@ -172,7 +172,7 @@
                 "actor": [
                   {
                     "name": "command",
-                    "onnx": "mdp/trace_run_23/obs/command.onnx",
+                    "onnx": "mdp/trace_run_24/obs/command.onnx",
                     "size": 46,
                     "input_slots": [
                       {
@@ -192,20 +192,38 @@
                     "history_length": 4
                   },
                   {
-                    "name": "TraceAlignedAnchorOri",
-                    "supine_head": 1.5332826371472,
-                    "prone_head": -1.5643876717408804,
-                    "settle_steps": 15,
-                    "relock_steps": 150,
-                    "lying_pelvis": 0.3,
-                    "still_linear": 0.5,
-                    "still_angular": 1.5,
-                    "history": 4,
-                    "command_name": "motion"
+                    "name": "motion_anchor_ori_b",
+                    "onnx": "mdp/trace_run_24/obs/motion_anchor_ori_b.onnx",
+                    "size": 6,
+                    "input_slots": [
+                      {
+                        "command": "motion",
+                        "field": "anchor_quat_w",
+                        "input": "command__motion_anchor_quat_w",
+                        "shape": [
+                          1,
+                          4
+                        ]
+                      },
+                      {
+                        "command": "motion",
+                        "field": "robot_anchor_quat_w",
+                        "input": "command__motion_robot_anchor_quat_w",
+                        "shape": [
+                          1,
+                          4
+                        ]
+                      }
+                    ],
+                    "func": "mjlab.tasks.tracking.mdp.observations:motion_anchor_ori_b",
+                    "params": {
+                      "command_name": "motion"
+                    },
+                    "history_length": 4
                   },
                   {
                     "name": "base_ang_vel",
-                    "onnx": "mdp/trace_run_23/obs/base_ang_vel.onnx",
+                    "onnx": "mdp/trace_run_24/obs/base_ang_vel.onnx",
                     "size": 3,
                     "input_slots": [
                       {
@@ -223,7 +241,7 @@
                   },
                   {
                     "name": "joint_pos",
-                    "onnx": "mdp/trace_run_23/obs/joint_pos.onnx",
+                    "onnx": "mdp/trace_run_24/obs/joint_pos.onnx",
                     "size": 23,
                     "input_slots": [
                       {
@@ -241,7 +259,7 @@
                   },
                   {
                     "name": "joint_vel",
-                    "onnx": "mdp/trace_run_23/obs/joint_vel.onnx",
+                    "onnx": "mdp/trace_run_24/obs/joint_vel.onnx",
                     "size": 23,
                     "input_slots": [
                       {
@@ -259,7 +277,7 @@
                   },
                   {
                     "name": "actions",
-                    "onnx": "mdp/trace_run_23/obs/actions.onnx",
+                    "onnx": "mdp/trace_run_24/obs/actions.onnx",
                     "size": 23,
                     "input_slots": [
                       {
@@ -276,7 +294,7 @@
                   },
                   {
                     "name": "projected_gravity",
-                    "onnx": "mdp/trace_run_23/obs/projected_gravity.onnx",
+                    "onnx": "mdp/trace_run_24/obs/projected_gravity.onnx",
                     "size": 3,
                     "input_slots": [
                       {
@@ -298,7 +316,7 @@
                 {
                   "name": "lie_face_up",
                   "mode": "manual",
-                  "onnx": "mdp/trace_run_23/event/lie_face_up.onnx",
+                  "onnx": "mdp/trace_run_24/event/lie_face_up.onnx",
                   "rand_dim": 0,
                   "rand_ranges": [],
                   "input_slots": [
@@ -387,7 +405,7 @@
                 {
                   "name": "lie_face_down",
                   "mode": "manual",
-                  "onnx": "mdp/trace_run_23/event/lie_face_down.onnx",
+                  "onnx": "mdp/trace_run_24/event/lie_face_down.onnx",
                   "rand_dim": 0,
                   "rand_ranges": [],
                   "input_slots": [
@@ -476,7 +494,7 @@
                 {
                   "name": "shove",
                   "mode": "manual",
-                  "onnx": "mdp/trace_run_23/event/shove.onnx",
+                  "onnx": "mdp/trace_run_24/event/shove.onnx",
                   "rand_dim": 6,
                   "rand_ranges": [
                     [
@@ -539,11 +557,11 @@
           ],
           "policies": [
             {
-              "id": "trace_run_23",
-              "name": "TRACE run 23",
+              "id": "trace_run_24",
+              "name": "TRACE run 24",
               "default": true,
-              "mdp": "trace_run_23",
-              "onnx": "policy/trace_run_23.onnx",
+              "mdp": "trace_run_24",
+              "onnx": "policy/trace_run_24.onnx",
               "policy_joint_names": [
                 "robot/left_hip_pitch_joint",
                 "robot/left_hip_roll_joint",

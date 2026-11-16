@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>TRACE: Tracking and Recovery Adaptive Control with Experts for the ROBOTIS K1 Humanoid</title>
+  <title>TRACE: Tracking and Recovery via A Gated Composition of Experts for the ROBOTIS K1 Humanoid</title>
   <meta name="description" content="One RL policy that dances, falls, gets up and dances on. Interactive in-browser demo (MuJoCo WebAssembly + ONNX Runtime Web).">
   <style>
     :root { --fg: #1f2328; --muted: #59636e; --line: #d1d9e0; --accent: #0969da; --bg-soft: #f6f8fa; }
@@ -36,7 +36,7 @@
 </head>
 <body>
 <header>
-  <h1>TRACE<span>Tracking and Recovery Adaptive Control with Experts for the ROBOTIS K1 Humanoid</span></h1>
+  <h1>TRACE<span><b>T</b>racking and <b>R</b>ecovery via <b>A</b> Gated <b>C</b>omposition of <b>E</b>xperts for the ROBOTIS K1 Humanoid</span></h1>
   <p class="author">Jaehyeok Eo (<a href="https://github.com/YESTER-H">YESTER-H</a>)</p>
   <p class="links">
     <a href="#demo">Interactive Demo</a>
@@ -48,11 +48,11 @@
 <main>
   <h2>Overview</h2>
   <p>
-    <b>TRACE</b> is a single reinforcement-learning policy for the ROBOTIS K1 humanoid (23 DoF). It
+    <b>TRACE</b> (Tracking and Recovery via A gated Composition of Experts) is a single reinforcement-learning policy for the ROBOTIS K1 humanoid (23 DoF). It
     <b>tracks a dance</b>, <b>gets up by itself</b> after falling face up or face down, and
     <b>goes back to the dance</b> without any external mode switch. A learned proprioceptive gate blends
     a Tracking expert and a Recovery expert. The policy was trained in Isaac Lab with the Newton
-    (MuJoCo-Warp) backend.
+    (MuJoCo-Warp) backend. The demo runs the final policy, <b>run 24</b>, which learned to get up from any lying heading.
   </p>
 
   <h2 id="demo">Interactive Demo</h2>
@@ -68,23 +68,24 @@
     <div><b>Shove it</b>Press <i>Shove (random push)</i> under <i>Events</i>, or open <i>Interact</i> and <i>Push</i> / <i>Pull</i> the robot with the mouse.</div>
     <div><b>Reset</b>Press <i>Reset</i> to stand the robot at the start of the dance.</div>
   </div>
-  <p class="note"><b>Heading alignment.</b> The Recovery expert was trained lying in one heading relative to the dance.
-    Once a fallen robot has lain still for 0.3 s, the demo turns the dance reference to the robot's lying heading,
-    so it gets up from any direction and dances on facing its new heading. In a CPU-MuJoCo push test, falls that came
-    back to the dance went from 13/26 without it to 26/26 with it.</p>
+  <p class="note"><b>Any heading.</b> Run 24 was trained with the lying heading randomized (±180°), so it gets up wherever
+    it lands and turns back to the dance by itself. The previous policy (run 23) needed a deployment-time correction for this.
+    In a CPU-MuJoCo push test (48 pushes), run 24 fell 13 times and all 13 came back to the dance with no correction.
+    Run 23 fell 26 times and 13 came back without the correction.</p>
 
   <h2>Results</h2>
   <figure>
     <img src="static/teaser_run23.gif" alt="Three K1 robots start lying face down, lying face up and standing; all end up dancing" width="720">
-    <figcaption>One policy, three starts (Isaac Lab / Newton). Left: Prone. Middle: Supine. Right: standing.</figcaption>
+    <figcaption>One policy, three starts (run 23, Isaac Lab / Newton). Left: Prone. Middle: Supine. Right: standing.</figcaption>
   </figure>
   <table>
-    <tr><th>Metric (run 23, iteration 40,600)</th><th>Supine</th><th>Prone</th></tr>
-    <tr><td>Recovery success at the end of training</td><td>0.997</td><td>0.999</td></tr>
-    <tr><td>Iteration where success first reaches 0.95</td><td>~2.1k</td><td>~4.0k</td></tr>
-    <tr><td>Frame-0 eval: step where Tracking starts (Newton)</td><td>261 (5.2 s)</td><td>338 (6.8 s)</td></tr>
-    <tr><td>Same in CPU MuJoCo (sim-to-sim check)</td><td>206 (4.1 s)</td><td>281 (5.6 s)</td></tr>
-    <tr><td>Perturbed fixed starts recovered (both motions)</td><td colspan="2">192 / 192</td></tr>
+    <tr><th>Metric (Isaac Lab / Newton unless noted)</th><th>Run 23</th><th>Run 24 (final)</th></tr>
+    <tr><td>Recovery success at the end of training (Supine / Prone)</td><td>0.997 / 0.999</td><td>0.997 / 0.998</td></tr>
+    <tr><td>Frame-0 eval: step where Tracking starts (Supine / Prone)</td><td>261 / 338</td><td>261 / 328</td></tr>
+    <tr><td>Perturbed fixed starts, trained heading</td><td>192 / 192</td><td>192 / 192</td></tr>
+    <tr><td>Perturbed fixed starts, random lying heading</td><td>87 / 192</td><td><b>192 / 192</b></td></tr>
+    <tr><td>Push test without correction: falls → back to the dance</td><td>44 → 15</td><td><b>20 → 19</b></td></tr>
+    <tr><td>CPU MuJoCo frame-0 start: step where Tracking starts (Supine / Prone)</td><td>206 / 281</td><td>209 / 274</td></tr>
   </table>
 
   <h2>Method</h2>
@@ -93,6 +94,7 @@
     <li><b>Hidden get-up references</b>: the actor sees only the dance reference; Supine and Prone get-ups shape the reward only.</li>
     <li><b>Transition</b>: 1.5 s in which the Tracking reward is ramped in after the robot stands up.</li>
     <li><b>Adaptive reset sampling</b> with a 2 s failure look-ahead (BeyondMimic) and trimmed get-up references.</li>
+    <li><b>Heading randomization</b> (run 24): Recovery resets turn the lying robot to a random heading relative to the dance.</li>
   </ul>
   <p>Builds on <a href="https://github.com/ROBOTIS-GIT/cyclo_lab">ROBOTIS cyclo_lab</a>, StableMimic and BeyondMimic.
     The demo is built with <a href="https://github.com/ttktjmt/mjswan">mjswan</a> (MuJoCo 3.11, mjlab 1.6).</p>
